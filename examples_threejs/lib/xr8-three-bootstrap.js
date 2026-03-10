@@ -114,8 +114,10 @@ export async function startXR8(config) {
         alpha: true,
       });
       state.renderer.autoClear = false;
-      state.renderer.setSize(canvasWidth, canvasHeight);
+      // Use window dimensions for fullscreen; pass false to not touch CSS
+      // (CSS handles the canvas sizing via position:fixed + 100%)
       state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      state.renderer.setSize(window.innerWidth, window.innerHeight, false);
 
       // Camera aspect
       state.camera.aspect = canvasWidth / canvasHeight;
@@ -164,7 +166,7 @@ export async function startXR8(config) {
 
     onCanvasSizeChange: ({ canvasWidth, canvasHeight }) => {
       if (!state.renderer) return;
-      state.renderer.setSize(canvasWidth, canvasHeight);
+      state.renderer.setSize(canvasWidth, canvasHeight, false);
       state.camera.aspect = canvasWidth / canvasHeight;
       state.camera.updateProjectionMatrix();
     },
