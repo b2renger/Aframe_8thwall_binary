@@ -258,7 +258,6 @@ Live Server is a VS Code extension that runs a local web server so you can previ
 
 AR needs camera access, and browsers only allow camera access on secure (HTTPS) pages. Live Server runs on HTTP by default. You need to create a security certificate and configure Live Server to use it.
 
-**On Windows**, open PowerShell (press `Win+X` then click "Windows PowerShell") and run:
 
 Open **Git Bash** (installed with Git for Windows, or the default terminal on macOS/Linux), navigate to your project folder, and run:
 
@@ -586,14 +585,7 @@ This requires a Mac. It lets you see your iPhone's Safari console on your Mac sc
 6. Click on the page you want to inspect
 7. A Web Inspector window opens with full console, network, and element inspection
 
-### iOS + Chrome
 
-On iOS, Chrome uses the same engine as Safari (WebKit) — Apple requires this for all browsers on iPhone. This means:
-
-- You **cannot** inspect iOS Chrome from a desktop computer
-- But since iOS Chrome uses the exact same engine as Safari, you can **reproduce any bug in Safari** and inspect it there using the method above
-
-If you specifically need to debug in Chrome on iOS, use the **eruda** method below.
 
 ### Any phone, any browser, no cable (eruda)
 
