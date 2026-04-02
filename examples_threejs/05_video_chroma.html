@@ -17,7 +17,7 @@
   </script>
 
   <!-- 8th Wall Engine -->
-  <script async src="../engine/xr.js"></script>
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
 </head>
 <body>
   <canvas id="xr-canvas"></canvas>
@@ -27,7 +27,7 @@
     import { startXR8, applyTargetPose } from './lib/xr8-three-bootstrap.js';
 
     const group = new THREE.Group();
-    group.visible = false;
+    group.position.set(0, -9999, 0);
 
     // --- Video element ---
     const video = document.createElement('video');
@@ -95,14 +95,13 @@
       }],
       onImageFound: (detail) => {
         applyTargetPose(group, detail);
-        group.visible = true;
         video.play().catch((err) => console.warn('Video play blocked:', err));
       },
       onImageUpdated: (detail) => {
         applyTargetPose(group, detail);
       },
       onImageLost: () => {
-        group.visible = false;
+        group.position.set(0, -9999, 0);
         video.pause();
       }
     });
