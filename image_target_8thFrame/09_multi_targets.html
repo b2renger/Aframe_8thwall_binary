@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>09 — Multi Image Targets</title>
+
+  <!-- AR Libraries -->
+  <script src="https://cdn.8thwall.com/web/aframe/8frame-1.3.0.min.js"></script>
+  <script src="https://cdn.8thwall.com/web/xrextras/xrextras.js"></script>
+
+  <!-- 8th Wall Engine -->
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+
+  <!-- Image Target Configuration — MULTIPLE TARGETS
+       Each target needs a unique "name" and its own image file.
+       Adjust width/height properties to match each image's dimensions. -->
+  <script>
+    const onxrloaded = () => {
+      XR8.XrController.configure({
+        imageTargetData: [
+          {
+            "name": "poster-a",
+            "type": "PLANAR",
+            "imagePath": "../assets/Targets/Target_1000055040.jpg",
+            "properties": {
+              "left": 0, "top": 0,
+              "width": 830, "height": 830,
+              "originalWidth": 830, "originalHeight": 830,
+              "isRotated": false
+            }
+          },
+          {
+            "name": "poster-b",
+            "type": "PLANAR",
+            "imagePath": "../assets/Targets/Target_cat.jpg",
+            "properties": {
+              "left": 0, "top": 0,
+              "width": 584, "height": 937,
+              "originalWidth": 584, "originalHeight": 937,
+              "isRotated": false
+            }
+          },
+          {
+            "name": "poster-c",
+            "type": "PLANAR",
+            "imagePath": "../assets/Targets/Target_drawing.jpg",
+            "properties": {
+              "left": 0, "top": 0,
+              "width": 800, "height": 972,
+              "originalWidth": 800, "originalHeight": 972,
+              "isRotated": false
+            }
+          },
+          {
+            "name": "poster-d",
+            "type": "PLANAR",
+            "imagePath": "../assets/Targets/Target_dragonfly.jpg",
+            "properties": {
+              "left": 0, "top": 0,
+              "width": 934, "height": 754,
+              "originalWidth": 934, "originalHeight": 754,
+              "isRotated": false
+            }
+          },
+          {
+            "name": "poster-e",
+            "type": "PLANAR",
+            "imagePath": "../assets/Targets/Target_wall_close.jpg",
+            "properties": {
+              "left": 0, "top": 0,
+              "width": 994, "height": 768,
+              "originalWidth": 994, "originalHeight": 768,
+              "isRotated": false
+            }
+          },
+          {
+            "name": "poster-f",
+            "type": "PLANAR",
+            "imagePath": "../assets/Targets/Target_wall_large.jpg",
+            "properties": {
+              "left": 0, "top": 0,
+              "width": 986, "height": 563,
+              "originalWidth": 986, "originalHeight": 563,
+              "isRotated": false
+            }
+          },
+          {
+            "name": "poster-g",
+            "type": "PLANAR",
+            "imagePath": "../assets/Targets/Target_wall_detail.jpg",
+            "properties": {
+              "left": 0, "top": 0,
+              "width": 524, "height": 762,
+              "originalWidth": 524, "originalHeight": 762,
+              "isRotated": false
+            }
+          },
+
+
+        ]
+      });
+    };
+    window.XR8 ? onxrloaded() : window.addEventListener('xrloaded', onxrloaded);
+  </script>
+</head>
+<body>
+  <a-scene
+    xrextras-gesture-detector
+    xrextras-almost-there
+    xrextras-loading
+    xrextras-runtime-error
+    xrweb="disableWorldTracking: true">
+
+    <a-camera position="0 4 10"></a-camera>
+
+    <!-- TARGET A — each target gets its own <xrextras-named-image-target>
+         with a name matching the imageTargetData entry -->
+    <xrextras-named-image-target name="poster-a">
+      <a-box color="#FF0055" position="0 0.5 0"
+             animation="property: rotation; to: 0 360 0; loop: true; dur: 4000; easing: linear">
+      </a-box>
+      <a-text value="Target A" color="red" align="center"
+              position="0 0 0" width="3"></a-text>
+    </xrextras-named-image-target>
+
+    <!-- TARGET B — different AR content for the second image
+         Replace ../assets/target-b.jpg with your own second image target -->
+    <xrextras-named-image-target name="poster-b">
+      <a-sphere color="#00AAFF" position="0 0.5 0" radius="0.4"
+                animation="property: position; from: 0 0.5 0; to: 0 1.0 0;
+                           loop: true; dur: 1500; dir: alternate; easing: easeInOutQuad">
+      </a-sphere>
+      <a-text value="Target B" color="red" align="center"
+              position="0 0 0" width="3"></a-text>
+    </xrextras-named-image-target>
+
+    <!-- TARGET C — different AR content for the second image
+    Replace ../assets/target-b.jpg with your own second image target -->
+    <xrextras-named-image-target name="poster-c">
+      <a-sphere color="#FFAAFF" position="0 0.5 0" radius="0.4"
+                animation="property: position; from: 0 0.5 0; to: 0 1.0 0;
+                               loop: true; dur: 1500; dir: alternate; easing: easeInOutQuad">
+      </a-sphere>
+      <a-text value="Target C" color="red" align="center"
+                  position="0 0 0" width="3"></a-text>
+      </xrextras-named-image-target>
+
+    <!-- TARGET D — different AR content for the second image
+    Replace ../assets/target-b.jpg with your own second image target -->
+    <xrextras-named-image-target name="poster-d">
+      <a-sphere color="#FF00AA" position="0 0.5 0" radius="0.4"
+                animation="property: position; from: 0 0.5 0; to: 0 1.0 0;
+                               loop: true; dur: 1500; dir: alternate; easing: easeInOutQuad">
+      </a-sphere>
+      <a-text value="Target D" color="red" align="center"
+                  position="0 0 0" width="3"></a-text>
+      </xrextras-named-image-target>
+
+          <!-- TARGET E — different AR content for the second image
+    Replace ../assets/target-b.jpg with your own second image target -->
+    <xrextras-named-image-target name="poster-e">
+      <a-text value="Wall Close" color="red" align="center"
+                  position="0 0 0" width="3"></a-text>
+      </xrextras-named-image-target>
+
+              <!-- TARGET F — different AR content for the second image
+    Replace ../assets/target-b.jpg with your own second image target -->
+    <xrextras-named-image-target name="poster-f">
+      <a-text value="Wall Large" color="red" align="center"
+                  position="0 0 0" width="3"></a-text>
+      </xrextras-named-image-target>
+
+              <!-- TARGET G — different AR content for the second image
+    Replace ../assets/target-b.jpg with your own second image target -->
+    <xrextras-named-image-target name="poster-g">
+      <a-text value="Wall Detail" color="red" align="center"
+                  position="0 0 0" width="3"></a-text>
+      </xrextras-named-image-target>
+  </a-scene>
+</body>
+</html>

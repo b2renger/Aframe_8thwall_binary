@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>01 — 3D Primitives</title>
+
+  <!-- AR Libraries -->
+  <script src="https://cdn.8thwall.com/web/aframe/8frame-1.3.0.min.js"></script>
+  <script src="https://cdn.8thwall.com/web/xrextras/xrextras.js"></script>
+
+  <!-- 8th Wall Engine -->
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+
+  <!-- Image Target Configuration -->
+  <script>
+    const onxrloaded = () => {
+      XR8.XrController.configure({
+        imageTargetData:[{
+          "name": "my-poster",
+          "type": "PLANAR",
+          "imagePath": "../assets/Targets/Target_1000055040.jpg",
+          "properties": {
+            "left": 0, "top": 0,
+            "width": 830, "height": 830,
+            "originalWidth": 830, "originalHeight": 830,
+            "isRotated": false
+          }
+        }]
+      });
+    };
+    window.XR8 ? onxrloaded() : window.addEventListener('xrloaded', onxrloaded);
+  </script>
+</head>
+<body>
+  <a-scene
+    xrextras-gesture-detector
+    xrextras-almost-there
+    xrextras-loading
+    xrextras-runtime-error
+    xrweb="disableWorldTracking: true">
+
+    <a-camera position="0 4 10"></a-camera>
+
+    <xrextras-named-image-target name="my-poster">
+
+      <!-- Title -->
+      <a-text value="3D Primitives" color="white" align="center"
+              position="0 2.2 0" width="4"></a-text>
+
+      <!-- Semi-transparent ground plane -->
+      <a-plane color="#333333" opacity="0.4" rotation="-90 0 0"
+               width="4" height="3" position="0 -0.01 0"></a-plane>
+
+      <!-- Row 1: Box, Sphere, Cylinder -->
+      <a-box color="#FF0055" position="-1.2 0.5 -0.5" scale="0.6 0.6 0.6"
+             animation="property: rotation; to: 0 360 0; loop: true; dur: 4000; easing: linear">
+      </a-box>
+
+      <a-sphere color="#00AAFF" position="0 0.5 -0.5" radius="0.35"
+                animation="property: position; from: 0 0.5 -0.5; to: 0 1.0 -0.5;
+                           loop: true; dur: 1500; dir: alternate; easing: easeInOutQuad">
+      </a-sphere>
+
+      <a-cylinder color="#33CC33" position="1.2 0.4 -0.5" radius="0.25" height="0.8"
+                  animation="property: rotation; to: 360 0 0; loop: true; dur: 3000; easing: linear">
+      </a-cylinder>
+
+      <!-- Row 2: Cone, Torus, Ring -->
+      <a-cone color="#FFAA00" position="-1.2 0.45 0.5"
+              radius-bottom="0.35" radius-top="0" height="0.8"
+              animation="property: scale; from: 1 1 1; to: 1.3 1.3 1.3;
+                         loop: true; dur: 1200; dir: alternate; easing: easeInOutSine">
+      </a-cone>
+
+      <a-torus color="#AA00FF" position="0 0.5 0.5"
+               radius="0.3" radius-tubular="0.06"
+               animation="property: rotation; to: 360 360 0; loop: true; dur: 5000; easing: linear">
+      </a-torus>
+
+      <a-ring color="#FF5599" position="1.2 0.5 0.5"
+              radius-inner="0.15" radius-outer="0.35"
+              animation="property: rotation; to: 0 0 360; loop: true; dur: 3500; easing: linear">
+      </a-ring>
+
+    </xrextras-named-image-target>
+
+  </a-scene>
+</body>
+</html>

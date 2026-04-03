@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>07 — p5.js Sketch</title>
+
+  <!-- AR Libraries -->
+  <script src="https://cdn.8thwall.com/web/aframe/8frame-1.3.0.min.js"></script>
+  <script src="https://cdn.8thwall.com/web/xrextras/xrextras.js"></script>
+
+  <!-- p5.js v1.9.4 (NOT v2.x — breaking changes to instance mode) -->
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+
+  <!-- 8th Wall Engine -->
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+
+  <!-- Image Target Configuration -->
+  <script>
+    const onxrloaded = () => {
+      XR8.XrController.configure({
+        imageTargetData:[{
+          "name": "my-poster",
+          "type": "PLANAR",
+          "imagePath": "../assets/Targets/Target_1000055040.jpg",
+          "properties": {
+            "left": 0, "top": 0,
+            "width": 830, "height": 830,
+            "originalWidth": 830, "originalHeight": 830,
+            "isRotated": false
+          }
+        }]
+      });
+    };
+    window.XR8 ? onxrloaded() : window.addEventListener('xrloaded', onxrloaded);
+  </script>
+
+  <!-- Custom component: renders a p5.js sketch to a THREE.js CanvasTexture.
+       Uses p5 instance mode to avoid global namespace pollution.
+       The sketch runs in a hidden container; each frame the canvas is
+       uploaded to the GPU via texture.needsUpdate = true. -->
+  <script>
+    AFRAME.registerComponent('p5-texture', {
+      schema: {
+        width: {type: 'int', default: 256},
+        height: {type: 'int', default: 256}
+      },
+      init: function () {
+        var self = this;
+        var container = document.createElement('div');
+        container.style.display = 'none';
+        document.body.appendChild(container);
+        this.container = container;
+
+        this.p5Instance = new p5(function (p) {
+          p.setup = function () {
+            var c = p.createCanvas(self.data.width, self.data.height);
+            c.parent(container);
+            self.p5Canvas = c.elt;
+          };
+          p.draw = function () {
+            // Animated colorful circles sketch
+            //p.background(0, 20);
+            p.clear();
+            var t = p.millis() * 0.001;
+            for (var i = 0; i < 6; i++) {
+              var angle = t + i * (p.TWO_PI / 6);
+              var x = p.width / 2 + p.cos(angle) * 60;
+              var y = p.height / 2 + p.sin(angle) * 60;
+              p.noStroke();
+              p.fill(
+                127 + 127 * p.sin(t + i * 0.5),
+                127 + 127 * p.sin(t + i * 0.7 + 2),
+                127 + 127 * p.sin(t + i * 0.9 + 4),
+                200
+              );
+              p.ellipse(x, y, 40 + 10 * p.sin(t * 2 + i), 40 + 10 * p.sin(t * 2 + i));
+            }
+            // Center circle
+            p.fill(255);
+            p.ellipse(p.width / 2, p.height / 2, 20 + 10 * p.sin(t * 3));
+          };
+        });
+      },
+      tick: function () {
+        if (!this.p5Canvas) return;
+        if (!this.texture) {
+          this.texture = new THREE.CanvasTexture(this.p5Canvas);
+          this.el.getObject3D('mesh').material.map = this.texture;
+          this.el.getObject3D('mesh').material.needsUpdate = true;
+        }
+        this.texture.needsUpdate = true;
+      },
+      remove: function () {
+        if (this.p5Instance) this.p5Instance.remove();
+        if (this.container) this.container.remove();
+      }
+    });
+  </script>
+</head>
+<body>
+  <a-scene
+    xrextras-gesture-detector
+    xrextras-almost-there
+    xrextras-loading
+    xrextras-runtime-error
+    xrweb="disableWorldTracking: true">
+
+    <a-camera position="0 4 10"></a-camera>
+
+    <xrextras-named-image-target name="my-poster">
+
+      <!-- p5.js sketch rendered as a texture on a plane
+           shader: flat avoids lighting artifacts on the canvas texture -->
+      <a-plane p5-texture="width: 256; height: 256"
+               material="shader: flat"
+               width="1.5" height="1.5"
+               position="0 0.75 0">
+      </a-plane>
+
+    </xrextras-named-image-target>
+
+  </a-scene>
+</body>
+</html>
