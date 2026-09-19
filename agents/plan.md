@@ -1,8 +1,8 @@
-# Implementation Plan: A-Frame + 8th Wall Image Tracking Examples
+# Implementation Plan: A-Frame + 8th Wall AR Examples
 
 ## Context
 
-Expand the project from a single `index.html` demo into 9 self-contained example files, a research document, and full README documentation. Each example demonstrates a specific technique for image-tracked AR content using A-Frame + 8th Wall distributed engine binary.
+Project provides 9 self-contained AR examples in 4 modes: Image Target and World Effect, each in A-Frame (8frame) and raw Three.js. Image target examples anchor content to a tracked image. World effect examples use tap-to-place on detected surfaces with world tracking enabled.
 
 ---
 
@@ -10,24 +10,23 @@ Expand the project from a single `index.html` demo into 9 self-contained example
 
 ```
 Aframe_8thwall_binary/
-├── index.html                          (existing, unchanged)
-├── README.md                           (rewrite)
-├── engine/                             (existing, unchanged)
-├── assets/                             (existing + user-provided assets)
-│   └── 1000055040bw-resize-640x480.jpg (existing image target)
+├── index.html                          (navigation — 4 sections, 36 cards)
+├── README.md
+├── engine/                             (8th Wall XR engine binary)
+├── assets/                             (shared assets)
 ├── agents/
-│   ├── research.md                     (DONE)
+│   ├── research.md
 │   └── plan.md                         (this file)
-└── examples/
-    ├── 01_primitives.html
-    ├── 02_text_msdf.html
-    ├── 03_images.html
-    ├── 04_3d_models.html
-    ├── 05_video_chroma.html
-    ├── 06_audio.html
-    ├── 07_p5js.html
-    ├── 08_gaussian_splat.html
-    └── 09_multi_targets.html
+├── image_target_8thFrame/              (A-Frame + image tracking)
+│   ├── 01_primitives.html ... 09_multi_targets.html
+├── image_target_Threejs/               (Three.js r178 + image tracking)
+│   ├── lib/xr8-three-bootstrap.js
+│   ├── 01_primitives.html ... 09_multi_targets.html
+├── world_8thFrame/                     (A-Frame + world tracking, tap-to-place)
+│   ├── 01_primitives.html ... 09_multi_targets.html
+└── world_Threejs/                      (Three.js r178 + world tracking, tap-to-place)
+    ├── lib/xr8-three-world-bootstrap.js
+    ├── 01_primitives.html ... 09_multi_targets.html
 ```
 
 ---

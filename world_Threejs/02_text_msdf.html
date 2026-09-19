@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>02 — Text & Fonts (World Effect)</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+    canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+  </style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://esm.sh/three@0.178.0",
+      "three/addons/": "https://esm.sh/three@0.178.0/examples/jsm/",
+      "troika-three-text": "https://esm.sh/troika-three-text@0.52.4?external=three"
+  } }
+  </script>
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+</head>
+<body>
+  <canvas id="xr-canvas"></canvas>
+  <script type="module">
+    import * as THREE from 'three';
+    import { Text } from 'troika-three-text';
+    import { startXR8World } from './lib/xr8-three-world-bootstrap.js';
+
+    const group = new THREE.Group();
+    group.position.set(0, -9999, 0);
+
+    const creepster = 'https://cdn.jsdelivr.net/fontsource/fonts/creepster@latest/latin-400-normal.woff';
+    const berkshire = 'https://cdn.jsdelivr.net/fontsource/fonts/berkshire-swash@latest/latin-400-normal.woff';
+    const crimson   = 'https://cdn.jsdelivr.net/fontsource/fonts/crimson-text@latest/latin-400-normal.woff';
+
+    function createText(value, opts = {}) {
+      const t = new Text();
+      t.text = value;
+      t.fontSize = opts.fontSize || 0.2;
+      t.color = opts.color || '#ffffff';
+      t.anchorX = 'center';
+      t.anchorY = 'middle';
+      if (opts.font) t.font = opts.font;
+      t.position.set(opts.x || 0, opts.y || 0, opts.z || 0);
+      t.sync();
+      return t;
+    }
+
+    group.add(createText('Hello World!', { fontSize: 0.3, color: '#FF0055', y: 1.5 }));
+    group.add(createText('Creepster Font', { font: creepster, fontSize: 0.25, color: '#00AAFF', y: 1.1 }));
+    group.add(createText('Berkshire Swash', { font: berkshire, fontSize: 0.25, color: '#33CC33', y: 0.7 }));
+    group.add(createText('Crimson Text', { font: crimson, fontSize: 0.25, color: '#FFAA00', y: 0.3 }));
+    group.add(createText('Small caption text', { fontSize: 0.12, color: '#AA00FF', y: -0.1 }));
+    group.add(createText('WebAR with Three.js', { fontSize: 0.18, color: '#FF5599', y: -0.5 }));
+
+    let placed = false;
+    const { scene } = await startXR8World({
+      canvas: document.getElementById('xr-canvas'),
+      onTapPlace: (pos) => {
+        if (placed) return;
+        group.position.copy(pos);
+        placed = true;
+      },
+      onRenderLoop: (ctx, delta) => {
+      }
+    });
+    scene.add(group);
+  </script>
+</body>
+</html>

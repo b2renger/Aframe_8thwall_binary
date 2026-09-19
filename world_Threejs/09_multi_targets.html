@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>09 — Multi Placement (World Effect)</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+    canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+  </style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://esm.sh/three@0.178.0",
+      "three/addons/": "https://esm.sh/three@0.178.0/examples/jsm/"
+  } }
+  </script>
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+</head>
+<body>
+  <canvas id="xr-canvas"></canvas>
+  <script type="module">
+    import * as THREE from 'three';
+    import { startXR8World } from './lib/xr8-three-world-bootstrap.js';
+
+    const objects = [];
+
+    // Object A — spinning box
+    const objA = new THREE.Group();
+    const boxA = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.6, 0.6),
+      new THREE.MeshStandardMaterial({ color: 0xFF0055 })
+    );
+    boxA.position.y = 0.5;
+    objA.add(boxA);
+    objects.push(objA);
+
+    // Object B — bouncing sphere
+    const objB = new THREE.Group();
+    const sphereB = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 32, 32),
+      new THREE.MeshStandardMaterial({ color: 0x00AAFF })
+    );
+    sphereB.position.y = 0.5;
+    objB.add(sphereB);
+    objects.push(objB);
+
+    // Object C — purple sphere
+    const objC = new THREE.Group();
+    const sphereC = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4, 32, 32),
+      new THREE.MeshStandardMaterial({ color: 0xFFAAFF })
+    );
+    sphereC.position.y = 0.5;
+    objC.add(sphereC);
+    objects.push(objC);
+
+    // Object D — pink cylinder
+    const objD = new THREE.Group();
+    const cylD = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.3, 0.3, 0.8, 32),
+      new THREE.MeshStandardMaterial({ color: 0xFF00AA })
+    );
+    cylD.position.y = 0.4;
+    objD.add(cylD);
+    objects.push(objD);
+
+    // Object E — green cone
+    const objE = new THREE.Group();
+    const coneE = new THREE.Mesh(
+      new THREE.ConeGeometry(0.35, 0.8, 32),
+      new THREE.MeshStandardMaterial({ color: 0x33CC33 })
+    );
+    coneE.position.y = 0.45;
+    objE.add(coneE);
+    objects.push(objE);
+
+    // Object F — purple torus
+    const objF = new THREE.Group();
+    const torusF = new THREE.Mesh(
+      new THREE.TorusGeometry(0.3, 0.06, 16, 48),
+      new THREE.MeshStandardMaterial({ color: 0xAA00FF })
+    );
+    torusF.position.y = 0.5;
+    objF.add(torusF);
+    objects.push(objF);
+
+    // Object G — orange ring
+    const objG = new THREE.Group();
+    const ringG = new THREE.Mesh(
+      new THREE.RingGeometry(0.15, 0.35, 32),
+      new THREE.MeshStandardMaterial({ color: 0xFFAA00, side: THREE.DoubleSide })
+    );
+    ringG.position.y = 0.5;
+    objG.add(ringG);
+    objects.push(objG);
+
+    // Hide all initially
+    objects.forEach(o => {
+      o.position.set(0, -9999, 0);
+    });
+
+    let placeIndex = 0;
+
+    const { scene } = await startXR8World({
+      canvas: document.getElementById('xr-canvas'),
+      onTapPlace: (pos) => {
+        if (placeIndex >= objects.length) return;
+        const obj = objects[placeIndex];
+        obj.position.copy(pos);
+        // Small random offset to avoid overlap
+        obj.position.x += (Math.random() - 0.5) * 0.5;
+        obj.position.z += (Math.random() - 0.5) * 0.5;
+        placeIndex++;
+      },
+      onRenderLoop: (ctx, delta) => {
+        const t = performance.now() * 0.001;
+        // Animate placed objects
+        if (objects[0].position.y > -999) {
+          boxA.rotation.y = t;
+        }
+        if (objects[1].position.y > -999) {
+          sphereB.position.y = 0.5 + Math.sin(t * 2) * 0.3;
+        }
+        if (objects[3].position.y > -999) {
+          cylD.rotation.x = t;
+        }
+        if (objects[5].position.y > -999) {
+          torusF.rotation.x = t;
+          torusF.rotation.y = t * 0.7;
+        }
+        if (objects[6].position.y > -999) {
+          ringG.rotation.z = t;
+        }
+      }
+    });
+
+    // Add all objects to scene after startXR8World returns
+    objects.forEach(o => scene.add(o));
+  </script>
+</body>
+</html>

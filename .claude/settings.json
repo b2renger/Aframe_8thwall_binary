@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -sL \"https://registry.npmjs.org/@sparkjsdev/spark\" -o spark.json)",
+      "Bash(node -e \"const p=require\\('./spark.json'\\); console.log\\(Object.keys\\(p.versions\\).slice\\(-15\\).join\\('\\\\n'\\)\\); console.log\\('LATEST', p['dist-tags']\\);\")",
+      "Bash(mkdir -p /tmp/sparkchk)",
+      "Read(//tmp/**)",
+      "Bash(node -e \"const p=require\\('./spark.json'\\); console.log\\(Object.keys\\(p.versions\\).join\\(' '\\)\\); console.log\\('LATEST', JSON.stringify\\(p['dist-tags']\\)\\);\")",
+      "WebSearch"
+    ]
+  }
+}

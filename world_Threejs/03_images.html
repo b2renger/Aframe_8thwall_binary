@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>03 — Images (World Effect)</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+    canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+  </style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://esm.sh/three@0.178.0",
+      "three/addons/": "https://esm.sh/three@0.178.0/examples/jsm/"
+  } }
+  </script>
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+</head>
+<body>
+  <canvas id="xr-canvas"></canvas>
+  <script type="module">
+    import * as THREE from 'three';
+    import { startXR8World } from './lib/xr8-three-world-bootstrap.js';
+
+    const group = new THREE.Group();
+    group.position.set(0, -9999, 0);
+
+    const loader = new THREE.TextureLoader();
+    const tex = await loader.loadAsync('../assets/Export_1.png');
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+    for (let i = 0; i < 3; i++) {
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), mat.clone());
+      plane.position.set(0, 0.3, i * 0.3);
+      group.add(plane);
+    }
+
+    let placed = false;
+    const { scene } = await startXR8World({
+      canvas: document.getElementById('xr-canvas'),
+      onTapPlace: (pos) => {
+        if (placed) return;
+        group.position.copy(pos);
+        placed = true;
+      },
+      onRenderLoop: (ctx, delta) => {
+      }
+    });
+    scene.add(group);
+  </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>07 — p5.js (World Effect)</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+    canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+  </style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://esm.sh/three@0.178.0",
+      "three/addons/": "https://esm.sh/three@0.178.0/examples/jsm/"
+  } }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+</head>
+<body>
+  <canvas id="xr-canvas"></canvas>
+  <script type="module">
+    import * as THREE from 'three';
+    import { startXR8World } from './lib/xr8-three-world-bootstrap.js';
+
+    const group = new THREE.Group();
+    group.position.set(0, -9999, 0);
+
+    // Create p5 sketch
+    const p5Canvas = document.createElement('canvas');
+    p5Canvas.width = 256;
+    p5Canvas.height = 256;
+
+    const sketch = (p) => {
+      p.setup = () => {
+        p.createCanvas(256, 256, p5Canvas);
+        p.background(30);
+      };
+      p.draw = () => {
+        p.background(30, 20);
+        const cx = 128, cy = 128;
+        const t = p.millis() * 0.001;
+        for (let i = 0; i < 6; i++) {
+          const angle = t + i * (p.TWO_PI / 6);
+          const x = cx + p.cos(angle) * 60;
+          const y = cy + p.sin(angle) * 60;
+          p.noStroke();
+          p.colorMode(p.HSB);
+          p.fill((i * 60) % 360, 200, 255);
+          p.ellipse(x, y, 30, 30);
+        }
+      };
+    };
+    new p5(sketch);
+
+    // Wait a frame for p5 to init, then get the canvas
+    await new Promise(r => requestAnimationFrame(r));
+    const actualCanvas = document.querySelector('.p5Canvas') || p5Canvas;
+
+    const texture = new THREE.CanvasTexture(actualCanvas);
+    const plane = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.5, 1.5),
+      new THREE.MeshBasicMaterial({ map: texture })
+    );
+    plane.position.y = 0.75;
+    group.add(plane);
+
+    let placed = false;
+    const { scene } = await startXR8World({
+      canvas: document.getElementById('xr-canvas'),
+      onTapPlace: (pos) => {
+        if (placed) return;
+        group.position.copy(pos);
+        placed = true;
+      },
+      onRenderLoop: () => {
+        texture.needsUpdate = true;
+      }
+    });
+    scene.add(group);
+  </script>
+</body>
+</html>

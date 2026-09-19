@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>04 — 3D Models (World Effect)</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+    canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+  </style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://esm.sh/three@0.178.0",
+      "three/addons/": "https://esm.sh/three@0.178.0/examples/jsm/"
+  } }
+  </script>
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+</head>
+<body>
+  <canvas id="xr-canvas"></canvas>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { startXR8World } from './lib/xr8-three-world-bootstrap.js';
+
+    const group = new THREE.Group();
+    group.position.set(0, -9999, 0);
+
+    const gltfLoader = new GLTFLoader();
+    let mixer = null;
+
+    const gltf1 = await gltfLoader.loadAsync('../assets/Fox.glb');
+    const model1 = gltf1.scene;
+    model1.position.set(-0.5, 0, 0);
+    model1.rotation.x = Math.PI / 2;
+    model1.scale.setScalar(0.1);
+    group.add(model1);
+
+    const gltf2 = await gltfLoader.loadAsync('../assets/Fox.glb');
+    const model2 = gltf2.scene;
+    model2.position.set(0.5, 0, 0);
+    model2.rotation.x = Math.PI / 2;
+    model2.scale.setScalar(0.05);
+    group.add(model2);
+
+    if (gltf2.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(model2);
+      gltf2.animations.forEach(clip => mixer.clipAction(clip).play());
+    }
+
+    let placed = false;
+    const { scene } = await startXR8World({
+      canvas: document.getElementById('xr-canvas'),
+      onTapPlace: (pos) => {
+        if (placed) return;
+        group.position.copy(pos);
+        placed = true;
+      },
+      onRenderLoop: (ctx, delta) => {
+        if (mixer) mixer.update(delta);
+      }
+    });
+    scene.add(group);
+  </script>
+</body>
+</html>

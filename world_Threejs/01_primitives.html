@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>01 — Primitives (World Effect)</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
+    canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+  </style>
+  <script type="importmap">
+  { "imports": {
+      "three": "https://esm.sh/three@0.178.0",
+      "three/addons/": "https://esm.sh/three@0.178.0/examples/jsm/"
+  } }
+  </script>
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+</head>
+<body>
+  <canvas id="xr-canvas"></canvas>
+  <script type="module">
+    import * as THREE from 'three';
+    import { startXR8World } from './lib/xr8-three-world-bootstrap.js';
+
+    const group = new THREE.Group();
+    group.position.set(0, -9999, 0);
+
+    // Title text plane
+    const titleGeo = new THREE.PlaneGeometry(2, 0.4);
+    const titleMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+    const title = new THREE.Mesh(titleGeo, titleMat);
+    title.position.set(0, 2.2, 0);
+    group.add(title);
+
+    // Ground plane with shadow
+    const groundGeo = new THREE.PlaneGeometry(4, 3);
+    const groundMat = new THREE.ShadowMaterial({ opacity: 0.4 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.01;
+    ground.receiveShadow = true;
+    group.add(ground);
+
+    // Box
+    const box = new THREE.Mesh(
+      new THREE.BoxGeometry(0.6, 0.6, 0.6),
+      new THREE.MeshStandardMaterial({ color: 0xFF0055 })
+    );
+    box.position.set(-1.2, 0.5, -0.5);
+    box.castShadow = true;
+    group.add(box);
+
+    // Sphere
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(0.35, 32, 32),
+      new THREE.MeshStandardMaterial({ color: 0x00AAFF })
+    );
+    sphere.position.set(0, 0.5, -0.5);
+    sphere.castShadow = true;
+    group.add(sphere);
+
+    // Cylinder
+    const cyl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.25, 0.25, 0.8, 32),
+      new THREE.MeshStandardMaterial({ color: 0x33CC33 })
+    );
+    cyl.position.set(1.2, 0.4, -0.5);
+    cyl.castShadow = true;
+    group.add(cyl);
+
+    // Cone
+    const cone = new THREE.Mesh(
+      new THREE.ConeGeometry(0.35, 0.8, 32),
+      new THREE.MeshStandardMaterial({ color: 0xFFAA00 })
+    );
+    cone.position.set(-1.2, 0.45, 0.5);
+    cone.castShadow = true;
+    group.add(cone);
+
+    // Torus
+    const torus = new THREE.Mesh(
+      new THREE.TorusGeometry(0.3, 0.06, 16, 48),
+      new THREE.MeshStandardMaterial({ color: 0xAA00FF })
+    );
+    torus.position.set(0, 0.5, 0.5);
+    torus.castShadow = true;
+    group.add(torus);
+
+    // Ring
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.15, 0.35, 32),
+      new THREE.MeshStandardMaterial({ color: 0xFF5599, side: THREE.DoubleSide })
+    );
+    ring.position.set(1.2, 0.5, 0.5);
+    ring.castShadow = true;
+    group.add(ring);
+
+    let placed = false;
+    const { scene } = await startXR8World({
+      canvas: document.getElementById('xr-canvas'),
+      onTapPlace: (pos) => {
+        if (placed) return;
+        group.position.copy(pos);
+        placed = true;
+      },
+      onRenderLoop: (ctx, delta) => {
+        const t = performance.now() * 0.001;
+        box.rotation.y += delta;
+        cyl.rotation.y -= delta * 0.8;
+        torus.rotation.x += delta * 1.2;
+        torus.rotation.y += delta * 0.6;
+        ring.rotation.y += delta;
+        ring.rotation.z += delta * 0.5;
+        sphere.position.y = 0.5 + Math.sin(t * 2) * 0.15;
+        const s = 1 + Math.sin(t * 3) * 0.2;
+        cone.scale.set(s, s, s);
+      }
+    });
+    scene.add(group);
+  </script>
+</body>
+</html>
