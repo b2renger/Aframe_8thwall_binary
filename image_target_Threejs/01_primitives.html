@@ -3,8 +3,10 @@
 
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>01 — 3D Primitives (Three.js)</title>
+  <title>01 — Primitives · Image target · Three.js</title>
   <style>
     html,
     body {
@@ -25,6 +27,9 @@
     }
   </style>
 
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -43,9 +48,9 @@
     import * as THREE from 'three';
     import { startXR8, applyTargetPose } from './lib/xr8-three-bootstrap.js';
 
-    // --- Content group (moved off-screen until image target is found) ---
+    // --- Content group (hidden until the camera finds the image, see onImageFound) ---
     const group = new THREE.Group();
-    group.position.set(0, -9999, 0);
+    group.visible = false;
 
     // --- Title (canvas-based text on a plane, anchored to the target) ---
     function makeTextPlane(text, fontSize, color) {
@@ -58,6 +63,7 @@
       ctx.textBaseline = 'middle';
       ctx.fillText(text, 256, 64);
       const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace; // keeps the colour you chose (see README)
       const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), mat);
       return mesh;
@@ -67,22 +73,25 @@
     title.position.set(0, 2.2, 0);
     group.add(title);
 
-    // --- Shadow-receiving ground plane ---
+    // Remember: Z points OUT of the image, towards you. Everything below has
+    // z > 0 so it floats in front of the paper, never behind it.
+
+    // --- Shadow-receiving "shelf" sticking out of the image (z = 0 to z = 2) ---
     const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(6, 4),
+      new THREE.PlaneGeometry(6, 2),
       new THREE.ShadowMaterial({ opacity: 0.95 })
     );
     ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, 0.01, 0);
+    ground.position.set(0, 0.01, 1);
     ground.receiveShadow = true;
     group.add(ground);
 
-    // --- Row 1: Box, Sphere, Cylinder ---
+    // --- Row 1 (closer to the paper, z = 0.5): Box, Sphere, Cylinder ---
     const box = new THREE.Mesh(
       new THREE.BoxGeometry(0.6, 0.6, 0.6),
       new THREE.MeshStandardMaterial({ color: 0xFF0055 })
     );
-    box.position.set(-1.2, 0.5, -0.5);
+    box.position.set(-1.2, 0.5, 0.5);
     box.castShadow = true;
     box.receiveShadow = true;
     group.add(box);
@@ -91,7 +100,7 @@
       new THREE.SphereGeometry(0.35, 32, 32),
       new THREE.MeshStandardMaterial({ color: 0x00AAFF })
     );
-    sphere.position.set(0, 0.5, -0.5);
+    sphere.position.set(0, 0.5, 0.5);
     sphere.castShadow = true;
     sphere.receiveShadow = true;
     group.add(sphere);
@@ -100,17 +109,17 @@
       new THREE.CylinderGeometry(0.25, 0.25, 0.8, 32),
       new THREE.MeshStandardMaterial({ color: 0x33CC33 })
     );
-    cylinder.position.set(1.2, 0.4, -0.5);
+    cylinder.position.set(1.2, 0.5, 0.5);
     cylinder.castShadow = true;
     cylinder.receiveShadow = true;
     group.add(cylinder);
 
-    // --- Row 2: Cone, Torus, Ring ---
+    // --- Row 2 (further out, z = 1.5): Cone, Torus, Ring ---
     const cone = new THREE.Mesh(
       new THREE.ConeGeometry(0.35, 0.8, 32),
       new THREE.MeshStandardMaterial({ color: 0xFFAA00 })
     );
-    cone.position.set(-1.2, 0.45, 0.5);
+    cone.position.set(-1.2, 0.55, 1.5);
     cone.castShadow = true;
     cone.receiveShadow = true;
     group.add(cone);
@@ -119,7 +128,7 @@
       new THREE.TorusGeometry(0.3, 0.06, 16, 48),
       new THREE.MeshStandardMaterial({ color: 0xAA00FF })
     );
-    torus.position.set(0, 0.5, 0.5);
+    torus.position.set(0, 0.5, 1.5);
     torus.castShadow = true;
     torus.receiveShadow = true;
     group.add(torus);
@@ -128,7 +137,7 @@
       new THREE.RingGeometry(0.15, 0.35, 32),
       new THREE.MeshStandardMaterial({ color: 0xFF5599, side: THREE.DoubleSide })
     );
-    ring.position.set(1.2, 0.5, 0.5);
+    ring.position.set(1.2, 0.5, 1.5);
     ring.castShadow = true;
     ring.receiveShadow = true;
     group.add(ring);
@@ -149,12 +158,13 @@
       }],
       onImageFound: (detail) => {
         applyTargetPose(group, detail);
+        group.visible = true;
       },
       onImageUpdated: (detail) => {
         applyTargetPose(group, detail);
       },
       onImageLost: () => {
-        group.position.set(0, -9999, 0);
+        group.visible = false;
       },
       onRenderLoop: (_ctx, _delta) => {
         const t = performance.now() * 0.001;
@@ -163,14 +173,13 @@
         // Box: continuous Y rotation
         box.rotation.y = (t * Math.PI * 2) / 4; // full turn in 4s
 
-        // Sphere: bounce between y=0.5 and y=1.0
-        //const bounce = Math.sin(t * Math.PI / 1.5) * 0.5; // easeInOutQuad-ish
-        //sphere.position.y = 0.5 + Math.abs(bounce) * 0.5;
+        // Sphere: bounce between y=0.5 and y=1.0 (1.5 s each way)
+        sphere.position.y = 0.75 - 0.25 * Math.cos(t * Math.PI / 1.5);
 
         // Cylinder: continuous X rotation
         cylinder.rotation.x = (t * Math.PI * 2) / 3;
 
-        // Cone: 
+        // Cone: tumble on two axes
         cone.rotation.z = (t * Math.PI * 2) / 3;
         cone.rotation.y = (t * Math.PI * 2) / 2.5;
 
@@ -178,7 +187,7 @@
         torus.rotation.x = (t * Math.PI * 2) / 5;
         torus.rotation.y = (t * Math.PI * 2) / 5;
 
-        // Ring: Z rotation
+        // Ring: Y rotation
         ring.rotation.y = (t * Math.PI * 2) / 3.5;
       }
     });

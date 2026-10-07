@@ -2,16 +2,21 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>07 — p5.js Sketch (Three.js)</title>
+  <title>07 — p5.js · Image target · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     canvas#xr-canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
 
-  <!-- p5.js v1.9.4 (NOT v2.x — breaking changes to instance mode) -->
+  <!-- p5.js 1.9.4: stay on 1.x. p5 2.x changed several functions and this sketch is written for 1.x -->
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
 
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -29,11 +34,17 @@
     import * as THREE from 'three';
     import { startXR8, applyTargetPose } from './lib/xr8-three-bootstrap.js';
 
+    // Hidden until the camera finds the image (onImageFound shows it)
     const group = new THREE.Group();
     group.visible = false;
 
-    // --- p5.js sketch (instance mode, hidden canvas) ---
-    const P5_SIZE = 256;
+    // --- p5.js sketch ---
+    // p5.js runs here in "instance mode": the sketch lives inside  function (p) { ... }
+    // so every p5 function and variable needs "p." in front:
+    // fill() -> p.fill(), ellipse() -> p.ellipse(), width -> p.width, millis() -> p.millis().
+    // To use your own p5 sketch, paste it inside and add "p." everywhere.
+    // The canvas is hidden; its pixels are copied onto the 3D plane every frame.
+    const P5_SIZE = 256; // p5 canvas size in pixels (keep it small: copied every frame)
     let p5Canvas = null;
     let canvasTexture = null;
 
@@ -103,6 +114,7 @@
         if (!p5Canvas) return;
         if (!canvasTexture) {
           canvasTexture = new THREE.CanvasTexture(p5Canvas);
+          canvasTexture.colorSpace = THREE.SRGBColorSpace;
           planeMat.map = canvasTexture;
           planeMat.needsUpdate = true;
         }

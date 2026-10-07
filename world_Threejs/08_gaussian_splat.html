@@ -2,12 +2,17 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>08 — Gaussian Splat (World Effect)</title>
+  <title>08 — Gaussian Splat · World · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -25,25 +30,30 @@
     import { startXR8World } from './lib/xr8-three-world-bootstrap.js';
 
     const group = new THREE.Group();
-    group.position.set(0, -9999, 0);
+    group.visible = false; // hidden until you tap the floor to place it
 
-    // Gaussian Splat via Spark.js
-    const splat = new SplatMesh({ url: '../assets/splat_30000.sog' });
+    // Gaussian Splat via Spark.js — same 5 MB file as the image-target version
+    // (splat_30000.sog is 19 MB, slow on mobile data).
+    // Spark sorts and renders the splat by itself: no per-frame update call needed.
+    const splat = new SplatMesh({ url: '../assets/flower_14p.sog' });
     splat.position.set(0, 0.5, 0);
     splat.scale.set(0.2, 0.2, 0.2);
-    splat.rotation.x = -Math.PI / 2;
+    // The image-target version uses rotation.x = -Math.PI / 2 because +Z points out of the image there.
+    // On the Y-up ground the splat needs one more -90° turn around X: -PI/2 - PI/2 = -PI.
+    // -PI and +PI are the same half-turn, so we simply write Math.PI.
+    splat.rotation.x = Math.PI;
     group.add(splat);
 
+    // onTapPlace runs on every tap; `placed` makes only the first tap count.
     let placed = false;
-    const { scene, camera } = await startXR8World({
+    const { scene } = await startXR8World({
       canvas: document.getElementById('xr-canvas'),
-      onTapPlace: (pos) => {
+      onTapPlace: (pos, _state, rotY) => {
         if (placed) return;
         group.position.copy(pos);
+        group.rotation.y = rotY;
+        group.visible = true;
         placed = true;
-      },
-      onRenderLoop: () => {
-        if (splat.update) splat.update(camera);
       }
     });
     scene.add(group);

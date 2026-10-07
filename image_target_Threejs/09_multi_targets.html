@@ -2,13 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>09 — Multi Image Targets (Three.js)</title>
+  <title>09 — Multi Targets · Image target · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
 
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -36,24 +41,34 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, 256, 64);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace; // keeps the colour you chose (see README)
       const sprite = new THREE.Sprite(
-        new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true })
+        new THREE.SpriteMaterial({ map: tex, transparent: true })
       );
       sprite.scale.set(3, 0.75, 1);
       return sprite;
     }
 
     // --- One group per target ---
+    // Z points out of the image: the shapes sit at z = 0.4 so they float in
+    // front of the paper instead of being half inside it.
+    // targetGroups is a lookup table (a Map): target name -> the 3D group shown on that image.
+    // The names ('poster-a', ...) MUST match the "name" fields in imageTargets below exactly,
+    // otherwise nothing appears and no error is shown.
+    // To add a target: build a group (with visible = false, like the ones below),
+    // call targetGroups.set('poster-h', myGroup), and add a 'poster-h' entry
+    // (image path + pixel size) to imageTargets.
     const targetGroups = new Map();
 
     // Target A — rotating red box
     const groupA = new THREE.Group();
     groupA.visible = false;
     const boxA = new THREE.Mesh(
-      new THREE.BoxGeometry(0.8, 0.8, 0.8),
+      new THREE.BoxGeometry(0.5, 0.5, 0.5),
       new THREE.MeshStandardMaterial({ color: 0xFF0055 })
     );
-    boxA.position.set(0, 0.5, 0);
+    boxA.position.set(0, 0.5, 0.4);
     groupA.add(boxA);
     const labelA = makeLabel('Target A', '#ff0000');
     labelA.position.set(0, 0, 0);
@@ -67,7 +82,7 @@
       new THREE.SphereGeometry(0.4, 32, 32),
       new THREE.MeshStandardMaterial({ color: 0x00AAFF })
     );
-    sphereB.position.set(0, 0.5, 0);
+    sphereB.position.set(0, 0.5, 0.4);
     groupB.add(sphereB);
     const labelB = makeLabel('Target B', '#ff0000');
     labelB.position.set(0, 0, 0);
@@ -81,7 +96,7 @@
       new THREE.SphereGeometry(0.4, 32, 32),
       new THREE.MeshStandardMaterial({ color: 0xFFAAFF })
     );
-    sphereC.position.set(0, 0.5, 0);
+    sphereC.position.set(0, 0.5, 0.4);
     groupC.add(sphereC);
     const labelC = makeLabel('Target C', '#ff0000');
     labelC.position.set(0, 0, 0);
@@ -95,7 +110,7 @@
       new THREE.SphereGeometry(0.4, 32, 32),
       new THREE.MeshStandardMaterial({ color: 0xFF00AA })
     );
-    sphereD.position.set(0, 0.5, 0);
+    sphereD.position.set(0, 0.5, 0.4);
     groupD.add(sphereD);
     const labelD = makeLabel('Target D', '#ff0000');
     labelD.position.set(0, 0, 0);
@@ -129,9 +144,9 @@
       { name: 'poster-e', type: 'PLANAR', imagePath: '../assets/Targets/Target_wall_close.jpg',
         properties: { left: 0, top: 0, width: 994, height: 768, originalWidth: 994, originalHeight: 768, isRotated: false } },
       { name: 'poster-f', type: 'PLANAR', imagePath: '../assets/Targets/Target_wall_large.jpg',
-        properties: { left: 0, top: 0, width: 986, height: 563, originalWidth: 986, originalHeight: 563, isRotated: false } },
+        properties: { left: 0, top: 0, width: 986, height: 564, originalWidth: 986, originalHeight: 564, isRotated: false } },
       { name: 'poster-g', type: 'PLANAR', imagePath: '../assets/Targets/Target_wall_detail.jpg',
-        properties: { left: 0, top: 0, width: 524, height: 762, originalWidth: 524, originalHeight: 762, isRotated: false } },
+        properties: { left: 0, top: 0, width: 524, height: 772, originalWidth: 524, originalHeight: 772, isRotated: false } },
     ];
 
     // --- Start XR8 ---
@@ -154,11 +169,11 @@
         const t = performance.now() * 0.001;
         // Animate Target A box rotation
         boxA.rotation.y = (t * Math.PI * 2) / 4;
-        // Animate Target B sphere bounce
-        sphereB.position.y = 0.5 + 0.25 * Math.sin(t * Math.PI / 0.75);
-        // Animate C & D bounces
-        sphereC.position.y = 0.5 + 0.25 * Math.sin(t * Math.PI / 0.75);
-        sphereD.position.y = 0.5 + 0.25 * Math.sin(t * Math.PI / 0.75);
+        // Spheres B, C, D bounce towards you and back (z from 0.4 to 0.9)
+        const bounce = 0.65 + 0.25 * Math.sin(t * Math.PI / 0.75);
+        sphereB.position.z = bounce;
+        sphereC.position.z = bounce;
+        sphereD.position.z = bounce;
       }
     });
 

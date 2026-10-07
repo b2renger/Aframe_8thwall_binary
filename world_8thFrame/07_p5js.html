@@ -2,83 +2,82 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>07 — p5.js (World Effect)</title>
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
+  <title>07 — p5.js · World · A-Frame</title>
   <script src="https://cdn.8thwall.com/web/aframe/8frame-1.3.0.min.js"></script>
   <script src="https://cdn.8thwall.com/web/xrextras/xrextras.js"></script>
   <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+  <!-- tap-to-place / tap-to-cycle components (shared by all world examples) -->
+  <script src="lib/tap-to-place.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
 
-  <script>
-    AFRAME.registerComponent('tap-to-place', {
-      init: function () {
-        this.placed = false;
-        this.el.setAttribute('visible', false);
-        this.onTap = (e) => {
-          if (this.placed) return;
-          const cam = this.el.sceneEl.camera;
-          const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
-          const pos = new THREE.Vector3().copy(cam.position).add(dir.multiplyScalar(2));
-          pos.y = 0;
-          this.el.setAttribute('position', pos);
-          this.el.setAttribute('visible', true);
-          this.placed = true;
-        };
-        this.el.sceneEl.canvas.addEventListener('touchstart', this.onTap);
-        this.el.sceneEl.canvas.addEventListener('click', this.onTap);
-      },
-      remove: function () {
-        this.el.sceneEl.canvas.removeEventListener('touchstart', this.onTap);
-        this.el.sceneEl.canvas.removeEventListener('click', this.onTap);
-      }
-    });
-  </script>
-
+  <!-- p5-texture: runs a p5.js sketch off-screen (hidden) and paints it onto the plane every frame.
+       To use YOUR sketch: paste your setup() code into p.setup and your draw() code into p.draw
+       below, then add "p." in front of every p5 word (see the note above the sketch).
+       Keep the 3 lines at the top of p.setup that create the canvas (A-Frame needs them), and do NOT
+       add your own createCanvas(): set the size on the plane instead, e.g. p5-texture="width: 256; height: 256". -->
   <script>
     AFRAME.registerComponent('p5-texture', {
       schema: {
-        width:  {type: 'int', default: 256},
+        width: {type: 'int', default: 256},
         height: {type: 'int', default: 256}
       },
       init: function () {
-        var el = this.el;
-        var w = this.data.width;
-        var h = this.data.height;
+        var self = this;
+        var container = document.createElement('div');
+        container.style.display = 'none';
+        document.body.appendChild(container);
+        this.container = container;
 
-        var sketch = function (p) {
+        // p5.js runs here in "instance mode": the sketch lives inside  function (p) { ... }
+        // so every p5 function and variable needs "p." in front:
+        // fill() -> p.fill(), ellipse() -> p.ellipse(), width -> p.width, millis() -> p.millis().
+        // To use your own p5 sketch, paste it inside and add "p." everywhere.
+        // The canvas is hidden; its pixels are copied onto the 3D plane every frame.
+        this.p5Instance = new p5(function (p) {
           p.setup = function () {
-            p.createCanvas(w, h);
-            p.background(30);
+            var c = p.createCanvas(self.data.width, self.data.height);
+            c.parent(container);
+            self.p5Canvas = c.elt;
           };
           p.draw = function () {
-            p.background(30, 20);
-            var cx = w / 2;
-            var cy = h / 2;
+            // Animated colorful circles sketch
+            // p.clear() = transparent background (works because the plane has transparent: true).
+            // For a solid background use p.background(0) instead; p.background(0, 20) leaves motion trails.
+            p.clear();
             var t = p.millis() * 0.001;
             for (var i = 0; i < 6; i++) {
               var angle = t + i * (p.TWO_PI / 6);
-              var x = cx + p.cos(angle) * 60;
-              var y = cy + p.sin(angle) * 60;
+              var x = p.width / 2 + p.cos(angle) * 60;
+              var y = p.height / 2 + p.sin(angle) * 60;
               p.noStroke();
-              p.fill((i * 60) % 360, 200, 255);
-              p.colorMode(p.HSB);
-              p.ellipse(x, y, 30, 30);
+              p.fill(
+                127 + 127 * p.sin(t + i * 0.5),
+                127 + 127 * p.sin(t + i * 0.7 + 2),
+                127 + 127 * p.sin(t + i * 0.9 + 4),
+                200
+              );
+              p.ellipse(x, y, 40 + 10 * p.sin(t * 2 + i), 40 + 10 * p.sin(t * 2 + i));
             }
+            // Center circle
+            p.fill(255);
+            p.ellipse(p.width / 2, p.height / 2, 20 + 10 * p.sin(t * 3));
           };
-        };
-
-        var instance = new p5(sketch);
-        var canvas = instance.canvas || document.querySelector('.p5Canvas');
-
-        var texture = new THREE.CanvasTexture(canvas);
-        this._interval = setInterval(function () {
-          texture.needsUpdate = true;
-        }, 33);
-
-        el.getObject3D('mesh').material.map = texture;
-        el.getObject3D('mesh').material.needsUpdate = true;
+        });
+      },
+      tick: function () {
+        if (!this.p5Canvas) return;
+        if (!this.texture) {
+          this.texture = new THREE.CanvasTexture(this.p5Canvas);
+          this.el.getObject3D('mesh').material.map = this.texture;
+          this.el.getObject3D('mesh').material.needsUpdate = true;
+        }
+        this.texture.needsUpdate = true;
       },
       remove: function () {
-        if (this._interval) clearInterval(this._interval);
+        if (this.p5Instance) this.p5Instance.remove();
+        if (this.container) this.container.remove();
       }
     });
   </script>
@@ -92,11 +91,22 @@
     vr-mode-ui="enabled: false"
     xrweb="disableWorldTracking: false">
 
+    <!-- Start position of the phone. Its height (4) sets the scale: 4 units ≈ the
+         phone's real height above the floor (about 1.2–1.5 m), so 1 unit ≈ 30–40 cm.
+         A bigger height makes everything look smaller, a smaller one makes it look bigger.
+         The floor is y = 0. See README > Coordinates and units. -->
     <a-camera position="0 4 10"></a-camera>
 
+    <!-- tap-to-place: everything inside stays hidden until you tap the floor. It then
+         appears where you tapped, turned to face you. Positions inside are measured
+         from that spot: y = 0 is the floor, so give an object a y of half its height
+         to stand on it. (How it works: lib/tap-to-place.js) -->
     <a-entity tap-to-place>
+      <!-- shader: flat = no lighting on the sketch; transparent: true lets the
+           cleared (empty) parts of the sketch show the camera image behind.
+           y = 0.75 is half the plane height (1.5), so its bottom edge sits on the floor. -->
       <a-plane p5-texture="width: 256; height: 256"
-               material="shader: flat"
+               material="shader: flat; transparent: true"
                width="1.5" height="1.5"
                position="0 0.75 0">
       </a-plane>

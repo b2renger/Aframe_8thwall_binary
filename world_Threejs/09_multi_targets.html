@@ -2,12 +2,17 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>09 — Multi Placement (World Effect)</title>
+  <title>09 — Multi Placement · World · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -40,7 +45,7 @@
       new THREE.SphereGeometry(0.4, 32, 32),
       new THREE.MeshStandardMaterial({ color: 0x00AAFF })
     );
-    sphereB.position.y = 0.5;
+    sphereB.position.y = 0.7; // it bounces 0.3 down: 0.7 - 0.3 - 0.4 (radius) = 0, the floor
     objB.add(sphereB);
     objects.push(objB);
 
@@ -60,7 +65,7 @@
       new THREE.CylinderGeometry(0.3, 0.3, 0.8, 32),
       new THREE.MeshStandardMaterial({ color: 0xFF00AA })
     );
-    cylD.position.y = 0.4;
+    cylD.position.y = 0.5; // 0.5 (not 0.4) so it stays above the floor while it tumbles
     objD.add(cylD);
     objects.push(objD);
 
@@ -94,41 +99,41 @@
     objG.add(ringG);
     objects.push(objG);
 
-    // Hide all initially
-    objects.forEach(o => {
-      o.position.set(0, -9999, 0);
-    });
+    // Hide all objects until each one is placed by a tap
+    objects.forEach(o => { o.visible = false; });
 
-    let placeIndex = 0;
+    let placeIndex = 0; // which object the next tap places
 
     const { scene } = await startXR8World({
       canvas: document.getElementById('xr-canvas'),
-      onTapPlace: (pos) => {
+      onTapPlace: (pos, _state, rotY) => {
         if (placeIndex >= objects.length) return;
         const obj = objects[placeIndex];
         obj.position.copy(pos);
+        obj.rotation.y = rotY;
+        obj.visible = true;
         // Small random offset to avoid overlap
         obj.position.x += (Math.random() - 0.5) * 0.5;
         obj.position.z += (Math.random() - 0.5) * 0.5;
         placeIndex++;
       },
-      onRenderLoop: (ctx, delta) => {
+      onRenderLoop: (state, delta) => {
         const t = performance.now() * 0.001;
         // Animate placed objects
-        if (objects[0].position.y > -999) {
+        if (objA.visible) {
           boxA.rotation.y = t;
         }
-        if (objects[1].position.y > -999) {
-          sphereB.position.y = 0.5 + Math.sin(t * 2) * 0.3;
+        if (objB.visible) {
+          sphereB.position.y = 0.7 + Math.sin(t * 2) * 0.3;
         }
-        if (objects[3].position.y > -999) {
+        if (objD.visible) {
           cylD.rotation.x = t;
         }
-        if (objects[5].position.y > -999) {
+        if (objF.visible) {
           torusF.rotation.x = t;
           torusF.rotation.y = t * 0.7;
         }
-        if (objects[6].position.y > -999) {
+        if (objG.visible) {
           ringG.rotation.z = t;
         }
       }

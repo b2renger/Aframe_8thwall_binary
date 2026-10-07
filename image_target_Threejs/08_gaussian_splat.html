@@ -2,13 +2,20 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>08 — Gaussian Splat (Three.js + Spark.js)</title>
+  <title>08 — Gaussian Splat · Image target · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
 
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it.
+       "?external=three" on the Spark line: Spark reuses the "three" above instead of
+       downloading its own copy (two copies of Three.js break rendering). -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -28,15 +35,23 @@
     import { SplatMesh } from '@sparkjsdev/spark';
     import { startXR8, applyTargetPose } from './lib/xr8-three-bootstrap.js';
 
+    // Hidden until the camera finds the image (onImageFound shows it)
     const group = new THREE.Group();
     group.visible = false;
 
     // --- Gaussian Splat via Spark.js ---
-    // Spark.js supports .sog, .splat, .ply, .spz, and .ksplat formats.
-    // With Three.js r178 this works natively — no polyfills needed.
+    // Spark.js needs Three.js r178+, so it works directly here (the A-Frame
+    // version needs a workaround, see README > Known limitations).
+    // Formats: .sog (smallest, used here), .spz, .ply, .splat, .ksplat.
     const splat = new SplatMesh({ url: '../assets/flower_14p.sog' });
-    splat.position.set(0, 0.5, 0);
+    // z = 0.5 lifts it out of the image so its base sits on the paper
+    // (the same as y = 0.5 on the floor in world_Threejs/08: here Z points out of the image)
+    splat.position.set(0, 0, 0.5);
     splat.scale.set(0.2, 0.2, 0.2);
+    // Many splat files are stored upside down (their "up" points along -Y), unlike
+    // the .glb models in 04, which use +Math.PI / 2. Turning -90° around X makes this
+    // one stand up out of the image. With your own splat, if it looks upside down
+    // or lies flat, try Math.PI / 2 or Math.PI here.
     splat.rotation.x = -Math.PI / 2;
     group.add(splat);
 

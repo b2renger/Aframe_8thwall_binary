@@ -2,12 +2,17 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>01 — Primitives (World Effect)</title>
+  <title>01 — Primitives · World · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -23,16 +28,28 @@
     import { startXR8World } from './lib/xr8-three-world-bootstrap.js';
 
     const group = new THREE.Group();
-    group.position.set(0, -9999, 0);
+    group.visible = false; // hidden until you tap the floor to place it
 
-    // Title text plane
-    const titleGeo = new THREE.PlaneGeometry(2, 0.4);
-    const titleMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
-    const title = new THREE.Mesh(titleGeo, titleMat);
+    // Title (canvas-based text on a plane)
+    const titleCanvas = document.createElement('canvas');
+    titleCanvas.width = 512; titleCanvas.height = 128;
+    const titleCtx = titleCanvas.getContext('2d');
+    titleCtx.font = 'bold 48px Arial';
+    titleCtx.fillStyle = '#ffffff';
+    titleCtx.textAlign = 'center';
+    titleCtx.textBaseline = 'middle';
+    titleCtx.fillText('3D Primitives', 256, 64);
+    const titleTex = new THREE.CanvasTexture(titleCanvas);
+    titleTex.colorSpace = THREE.SRGBColorSpace;
+    const title = new THREE.Mesh(
+      new THREE.PlaneGeometry(4, 1),
+      new THREE.MeshBasicMaterial({ map: titleTex, transparent: true, side: THREE.DoubleSide })
+    );
     title.position.set(0, 2.2, 0);
     group.add(title);
 
-    // Ground plane with shadow
+    // Invisible floor that only shows the shadows (ShadowMaterial), so you see the
+    // real floor through it. (The A-Frame version uses a see-through grey plane.)
     const groundGeo = new THREE.PlaneGeometry(4, 3);
     const groundMat = new THREE.ShadowMaterial({ opacity: 0.4 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -73,7 +90,7 @@
       new THREE.ConeGeometry(0.35, 0.8, 32),
       new THREE.MeshStandardMaterial({ color: 0xFFAA00 })
     );
-    cone.position.set(-1.2, 0.45, 0.5);
+    cone.position.set(-1.2, 0.5, 0.5); // y = 0.5 so its base stays above the floor while it grows
     cone.castShadow = true;
     group.add(cone);
 
@@ -95,15 +112,18 @@
     ring.castShadow = true;
     group.add(ring);
 
+    // onTapPlace runs on every tap; `placed` makes only the first tap count.
     let placed = false;
     const { scene } = await startXR8World({
       canvas: document.getElementById('xr-canvas'),
-      onTapPlace: (pos) => {
+      onTapPlace: (pos, _state, rotY) => {
         if (placed) return;
         group.position.copy(pos);
+        group.rotation.y = rotY;
+        group.visible = true;
         placed = true;
       },
-      onRenderLoop: (ctx, delta) => {
+      onRenderLoop: (state, delta) => {
         const t = performance.now() * 0.001;
         box.rotation.y += delta;
         cyl.rotation.y -= delta * 0.8;

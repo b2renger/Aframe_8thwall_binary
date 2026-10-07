@@ -2,12 +2,17 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>06 — Audio (World Effect)</title>
+  <title>06 — Audio · World · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -23,7 +28,7 @@
     import { startXR8World } from './lib/xr8-three-world-bootstrap.js';
 
     const group = new THREE.Group();
-    group.position.set(0, -9999, 0);
+    group.visible = false; // hidden until you tap the floor to place it
 
     // Speaker base
     const base = new THREE.Mesh(
@@ -41,30 +46,40 @@
     speakerCone.position.y = 0.2;
     group.add(speakerCone);
 
-    // Animated rings
+    // Animated rings, lying flat around the top of the speaker like ripples
+    // (standing upright, they would sink into the floor as they grow).
     const ringGeo = new THREE.RingGeometry(0.25, 0.28, 32);
     const ringMat = new THREE.MeshBasicMaterial({ color: 0x00AAFF, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
     const ring1 = new THREE.Mesh(ringGeo, ringMat.clone());
     ring1.position.y = 0.3;
+    ring1.rotation.x = -Math.PI / 2;
     group.add(ring1);
     const ring2 = new THREE.Mesh(ringGeo, ringMat.clone());
     ring2.position.y = 0.3;
+    ring2.rotation.x = -Math.PI / 2;
     group.add(ring2);
 
     let audio = null;
+    // onTapPlace runs on every tap; `placed` makes only the first tap count.
     let placed = false;
 
     const { scene } = await startXR8World({
       canvas: document.getElementById('xr-canvas'),
-      onTapPlace: (pos) => {
+      onTapPlace: (pos, _state, rotY) => {
         if (placed) return;
         group.position.copy(pos);
+        group.rotation.y = rotY;
+        group.visible = true;
         placed = true;
+        // Sound starts here, inside the tap, on purpose: browsers only allow sound
+        // after the user taps. Placing the speaker IS that tap, so this example
+        // needs no extra "Tap to enable sound" (unlike image-target 06).
+        // Move this code outside onTapPlace and the sound will be blocked.
         audio = new Audio('../assets/634332__josefpres__bass-loops-077-with-drums-long-loop-120-bpm.mp3');
         audio.loop = true;
         audio.play().catch(e => console.warn('Audio blocked:', e));
       },
-      onRenderLoop: (ctx, delta) => {
+      onRenderLoop: (state, delta) => {
         if (!placed) return;
         const t = performance.now() * 0.001;
         // Animate rings - pulsing scale and fading opacity

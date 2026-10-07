@@ -2,13 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>04 — 3D Models (Three.js)</title>
+  <title>04 — 3D Models · Image target · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
 
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -27,6 +32,7 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { startXR8, applyTargetPose } from './lib/xr8-three-bootstrap.js';
 
+    // Hidden until the camera finds the image (onImageFound shows it)
     const group = new THREE.Group();
     group.visible = false;
 
@@ -34,6 +40,11 @@
     let mixer = null;
 
     // Load static model (plant)
+    // Three.js angles are in radians, not degrees: Math.PI = 180°, Math.PI / 2 = 90°.
+    // Rotating 90° around X makes a "Y-up" model (Blender, Sketchfab) stand up out of
+    // the image instead of lying flat (README > Coordinates and units).
+    // scale: 1 unit = the height of the target image, so at scale 0.1 a model
+    // that is 1 unit tall becomes one tenth of the image's height.
     const plant = await gltfLoader.loadAsync('../assets/plant_modelling.glb');
     plant.scene.position.set(-0.5, 0, 0);
     plant.scene.rotation.set(Math.PI / 2, 0, 0);

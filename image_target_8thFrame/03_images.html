@@ -2,7 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>03 — Images</title>
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
+  <title>03 — Images · Image target · A-Frame</title>
 
   <!-- AR Libraries -->
   <script src="https://cdn.8thwall.com/web/aframe/8frame-1.3.0.min.js"></script>
@@ -37,9 +39,11 @@
     xrextras-almost-there
     xrextras-loading
     xrextras-runtime-error
+    vr-mode-ui="enabled: false"
     xrweb="disableWorldTracking: true">
 
-    <!-- Preload image asset -->
+    <!-- Preload the image. To use your own: put it in assets/ and change src (mind upper/lower case).
+         Keep the id, or change it here AND in src="#export1" below. -->
     <a-assets>
       <img id="export1" src="../assets/export1.png" crossorigin="anonymous">
     </a-assets>
@@ -48,8 +52,11 @@
 
     <xrextras-named-image-target name="my-poster">
 
-      <!-- Three instances of the same image, stacked along the Y-axis
-           (perpendicular to the poster surface) with slight Z offsets -->
+      <!-- Three instances of the same image, stacked in layers along the Z axis
+           (Z points out of the poster surface, Y points to the top of the poster) -->
+
+      <!-- width/height must keep the picture's proportions: export1.png is square (400 x 400),
+           so 1.5 x 1.5. For an 800 x 600 photo use e.g. width="1.5" height="1.125". -->
 
       <!-- Instance 1 — back layer -->
       <a-image src="#export1" position="0 0.3 0" width="1.5" height="1.5"></a-image>

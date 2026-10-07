@@ -2,12 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>07 — p5.js (World Effect)</title>
+  <title>07 — p5.js · World · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
-    canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+    /* Only the XR canvas: a global "canvas" rule would also stretch p5's canvas over the camera feed */
+    canvas#xr-canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -24,56 +30,69 @@
     import { startXR8World } from './lib/xr8-three-world-bootstrap.js';
 
     const group = new THREE.Group();
-    group.position.set(0, -9999, 0);
+    group.visible = false; // hidden until you tap the floor to place it
 
-    // Create p5 sketch
-    const p5Canvas = document.createElement('canvas');
-    p5Canvas.width = 256;
-    p5Canvas.height = 256;
+    // --- p5.js sketch ---
+    // p5.js runs here in "instance mode": the sketch lives inside  new p5((p) => { ... })
+    // so every p5 function and variable needs "p." in front:
+    // fill() -> p.fill(), ellipse() -> p.ellipse(), width -> p.width, millis() -> p.millis().
+    // To use your own p5 sketch, paste it inside and add "p." everywhere.
+    // The canvas is hidden (in the <div> below); its pixels are copied onto the
+    // 3D plane every frame (see onRenderLoop further down).
+    const P5_SIZE = 256;
+    let p5Canvas = null;
+    let texture = null;
 
-    const sketch = (p) => {
+    const container = document.createElement('div');
+    container.style.display = 'none';
+    document.body.appendChild(container);
+
+    new p5((p) => {
       p.setup = () => {
-        p.createCanvas(256, 256, p5Canvas);
-        p.background(30);
+        const c = p.createCanvas(P5_SIZE, P5_SIZE);
+        c.parent(container);
+        p.colorMode(p.HSB, 360, 100, 100);
+        p.background(0, 0, 12);
+        p5Canvas = c.elt;
       };
       p.draw = () => {
-        p.background(30, 20);
-        const cx = 128, cy = 128;
+        p.background(0, 0, 12, 0.08); // translucent background = motion trails
+        const cx = P5_SIZE / 2, cy = P5_SIZE / 2;
         const t = p.millis() * 0.001;
+        p.noStroke();
         for (let i = 0; i < 6; i++) {
           const angle = t + i * (p.TWO_PI / 6);
-          const x = cx + p.cos(angle) * 60;
-          const y = cy + p.sin(angle) * 60;
-          p.noStroke();
-          p.colorMode(p.HSB);
-          p.fill((i * 60) % 360, 200, 255);
-          p.ellipse(x, y, 30, 30);
+          p.fill((i * 60) % 360, 80, 100);
+          p.ellipse(cx + p.cos(angle) * 60, cy + p.sin(angle) * 60, 30, 30);
         }
       };
-    };
-    new p5(sketch);
+    });
 
-    // Wait a frame for p5 to init, then get the canvas
-    await new Promise(r => requestAnimationFrame(r));
-    const actualCanvas = document.querySelector('.p5Canvas') || p5Canvas;
-
-    const texture = new THREE.CanvasTexture(actualCanvas);
-    const plane = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.5, 1.5),
-      new THREE.MeshBasicMaterial({ map: texture })
-    );
+    // --- Plane mesh; the p5 canvas becomes its texture once p5 has set up ---
+    const planeMat = new THREE.MeshBasicMaterial();
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), planeMat);
     plane.position.y = 0.75;
     group.add(plane);
 
+    // onTapPlace runs on every tap; `placed` makes only the first tap count.
     let placed = false;
     const { scene } = await startXR8World({
       canvas: document.getElementById('xr-canvas'),
-      onTapPlace: (pos) => {
+      onTapPlace: (pos, _state, rotY) => {
         if (placed) return;
         group.position.copy(pos);
+        group.rotation.y = rotY;
+        group.visible = true;
         placed = true;
       },
       onRenderLoop: () => {
+        if (!p5Canvas) return;
+        if (!texture) {
+          texture = new THREE.CanvasTexture(p5Canvas);
+          texture.colorSpace = THREE.SRGBColorSpace;
+          planeMat.map = texture;
+          planeMat.needsUpdate = true;
+        }
         texture.needsUpdate = true;
       }
     });

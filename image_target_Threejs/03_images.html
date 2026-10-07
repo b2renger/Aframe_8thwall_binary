@@ -2,13 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>03 — Images (Three.js)</title>
+  <title>03 — Images · Image target · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
 
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -26,12 +31,14 @@
     import * as THREE from 'three';
     import { startXR8, applyTargetPose } from './lib/xr8-three-bootstrap.js';
 
+    // Hidden until the camera finds the image (onImageFound shows it)
     const group = new THREE.Group();
     group.visible = false;
 
     // Load image texture
     const loader = new THREE.TextureLoader();
     const texture = await loader.loadAsync('../assets/export1.png');
+    texture.colorSpace = THREE.SRGBColorSpace; // color image: without this it looks washed out
 
     // Three instances of the same image, stacked with Z offsets
     const offsets = [0, 0.3, 0.6];

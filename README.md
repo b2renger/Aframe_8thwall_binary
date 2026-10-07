@@ -1,118 +1,99 @@
-# A-Frame + 8th Wall — WebAR Image Tracking Examples
+# A-Frame + 8th Wall — WebAR Examples (Image Tracking & World Effects)
 
 ## What is this project?
 
-This project lets you create **Augmented Reality (AR) experiences that run directly in a phone's web browser** — no app to download, no app store involved. You print an image (or display it on a screen), point your phone's camera at it, and 3D content appears on top of it in real time.
+This project lets you create **Augmented Reality (AR) experiences that run directly in a phone's web browser** — no app to download, no app store involved.
 
-Think of it like an interactive poster: a printed image becomes a trigger that makes 3D objects, videos, sounds, or animations appear through the phone screen.
+It covers the two classic kinds of WebAR:
+
+- **Image targets** — you print an image (or display it on a screen), point your phone at it, and 3D content appears on top of it and follows it. Think of an interactive poster.
+- **World effects** — no image needed: you tap the floor on your phone screen and 3D content is placed there, as if it were in the room.
+
+Each kind exists in two flavours: **A-Frame** (3D described with HTML tags, the easiest) and **raw Three.js** (JavaScript, more control, newer libraries). That makes 4 sets of 9 examples (plus a bonus 05b in the A-Frame image-target set).
 
 ### What tools does this project use, and why?
 
 | Tool | What it is | Why we use it |
 |------|-----------|---------------|
-| **A-Frame (8frame 1.3.0)** | An open-source framework for building 3D scenes in a web page, using simple HTML tags. You write `<a-box color="red">` and a red cube appears. No 3D software needed. | It makes 3D accessible to people who know basic HTML. You describe your scene like you write a web page. |
-| **8th Wall Engine** (from Niantic) | An AR engine that uses the phone camera to detect images and track their position in real time. It is the part that recognizes your printed poster and knows where to place the 3D content. | It runs directly in the browser (WebAR). Other AR tools require building a native app. This one works with just a URL. |
-| **XRExtras** | A helper library from 8th Wall that provides a loading screen, error messages, and gesture detection out of the box. | Without it, you would have to code your own loading spinner, camera permission prompts, etc. It handles all of that. |
+| **A-Frame (8frame 1.3.0)** | An open-source framework for building 3D scenes in a web page using HTML tags. You write `<a-box color="red">` and a red cube appears. 8frame is 8th Wall's build of A-Frame. | It makes 3D accessible to people who know basic HTML. |
+| **Three.js (r178)** | The JavaScript 3D library A-Frame is built on. | Used directly in the `*_Threejs` folders, so we can use modern libraries (e.g. Spark.js for Gaussian splats) that need a newer Three.js than the r137 bundled in 8frame. |
+| **8th Wall XR Engine** (Niantic Spatial) | The AR engine: it reads the camera, recognises image targets and tracks the phone's movement in the room. Self-hosted in `engine/`. | It runs in the browser (WebAR): no native app, just a URL. |
+| **XRExtras** | 8th Wall helpers for A-Frame: loading screen, camera-permission and error screens. | Saves writing all that UI yourself (A-Frame examples only). |
 
 ### How does it work in practice?
 
-1. You open a URL on your phone (the page must be served over **HTTPS** — the camera will not work on plain HTTP)
-2. The page asks for camera permission — you accept
-3. You point the camera at the printed image target
-4. The AR engine recognizes the image and places 3D content on top of it
-5. You move the phone around and the 3D content stays anchored to the image
+1. You open a URL on your phone. The page **must be served over HTTPS** — browsers refuse camera access on plain HTTP (see [Step 3](#step-3-test-on-your-phone) for an easy way to get HTTPS).
+2. The page asks for camera permission — you accept.
+3. **Image target examples:** you point the camera at the printed image; the 3D content appears on it and stays anchored to it as you move.
+   **World examples:** you move the phone a little so the engine understands the room, then tap the floor on screen; the content is placed there.
+
+### Words you'll meet
+
+- **HTTPS**: the secure version of a web address (`https://`). Phones only give the camera to HTTPS pages (`localhost` on your computer is the exception).
+- **CDN**: a website that hosts code libraries for everyone to use. The examples load A-Frame, Three.js and fonts from CDNs, so they need an internet connection.
+- **r137 / r178**: Three.js version numbers ("release 137", "release 178"). A-Frame (8frame 1.3.0) contains r137; the `*_Threejs` folders use r178.
+- **SLAM**: the part of the engine that tracks the phone's movement in the room. `data-preload-chunks="slam"` downloads it early (the image-target examples load it too: it also does the image tracking).
+- **MSDF font**: a font stored as a picture plus a `.json` file, so text stays sharp in 3D.
+- **Shader**: a small program the graphics card runs for every pixel. The chromakey shader in example 05 makes the green pixels transparent.
+- **Gaussian splat**: a photorealistic 3D scan made of millions of soft coloured dots (`.sog` or `.splat` files).
+- **Import map**: the `<script type="importmap">` block at the top of each Three.js example. It tells the browser where to download `three` when the code says `import ... from 'three'`.
+- **Y-up**: "the Y axis points up". `.glb` models and world effects work this way; image targets don't (there, Z points out of the paper, see [Coordinates and units](#coordinates-and-units)).
+- **sRGB**: the normal colour format of images. Three.js must be told a texture is sRGB (`texture.colorSpace = THREE.SRGBColorSpace`), or it looks washed out.
+- **Pipeline module**: a set of functions the AR engine calls on every camera frame. The Three.js examples use one (in their `lib/` file) to update the 3D scene.
 
 ---
 
 ## Table of Contents
 
-- [What is this project?](#what-is-this-project)
+- [Words you'll meet](#words-youll-meet)
 - [Examples Overview](#examples-overview)
+- [Which set should I start with?](#which-set-should-i-start-with)
 - [Assets — What you need to print and prepare](#assets--what-you-need-to-print-and-prepare)
 - [Getting Started](#getting-started)
-  - [Step 1: Fork the repository (make your own copy)](#step-1-fork-the-repository-make-your-own-copy)
+  - [Step 1: Fork the repository](#step-1-fork-the-repository-make-your-own-copy)
   - [Step 2: Choose your working environment](#step-2-choose-your-working-environment)
-    - [Option A: Firebase Studio (easiest, works in the browser)](#option-a-firebase-studio-easiest-works-in-the-browser)
-    - [Option B: VS Code on your computer with Live Server](#option-b-vs-code-on-your-computer-with-live-server)
   - [Step 3: Test on your phone](#step-3-test-on-your-phone)
-  - [Step 4: Publish to GitHub Pages (make it public)](#step-4-publish-to-github-pages-make-it-public)
-- [Raw Three.js Examples](#raw-threejs-examples)
+  - [Step 4: Publish to GitHub Pages](#step-4-publish-to-github-pages-make-it-public)
 - [How to Modify the Examples](#how-to-modify-the-examples)
-  - [Understanding the HTML structure](#understanding-the-html-structure)
-  - [Changing the image target](#changing-the-image-target)
-  - [Changing the 3D content](#changing-the-3d-content)
-  - [Adding your own assets](#adding-your-own-assets)
 - [Mobile Debugging — How to see errors on your phone](#mobile-debugging--how-to-see-errors-on-your-phone)
-  - [Android + Chrome (USB)](#android--chrome-usb)
-  - [iOS + Safari (USB + Mac)](#ios--safari-usb--mac)
-  - [iOS + Chrome](#ios--chrome)
-  - [Any phone, any browser, no cable (eruda)](#any-phone-any-browser-no-cable-eruda)
 - [Project Structure](#project-structure)
+- [Known limitations](#known-limitations)
 - [License and Credits](#license-and-credits)
 
 ---
 
 ## Examples Overview
 
-Each example is a single HTML file that demonstrates one technique. They go from simple to advanced. You can open them, read the code, modify it, and see the result on your phone.
+The landing page (`index.html`) links to every example. Each example is one HTML file demonstrating one technique, from simple to advanced (in `world_8thFrame/`, `image_target_Threejs/` and `world_Threejs/`, the examples also share a helper file in that folder's `lib/` folder). The same 9 topics exist in all 4 folders:
 
-| # | Example | What you will see | What it teaches you | What you need |
-|---|---------|-------------------|---------------------|---------------|
-| 01 | [Primitives](examples/01_primitives.html) | Six colored 3D shapes (cube, sphere, cylinder, cone, torus, ring) floating above the image, each with a different animation | How to place basic 3D shapes, set colors, positions, and add simple animations using HTML attributes | Just print the image target |
-| 02 | [Text MSDF](examples/02_text_msdf.html) | Text rendered in 4 different fonts floating in AR | How to display text in AR with custom fonts (Roboto, Creepster, Berkshire Swash, Crimson Text) | Just print the image target |
-| 03 | [Images](examples/03_images.html) | A 2D image displayed on a floating plane above the target, shown with 3 different methods | How to show flat images in AR: as an `a-image`, as a textured plane, and as a tiled/repeated texture | Print the image target + the file `export1.png` is included |
-| 04 | [3D Models](examples/04_3d_models.html) | A plant and an animated character appear above the image | How to load 3D model files (`.glb` format, exported from Blender or similar) and play their built-in animations | Print the image target. Models `plant_modelling.glb` and `satanim3.glb` are included |
-| 05 | [Video Chroma](examples/05_video_chroma.html) | A video plays on a floating screen with its green background removed (transparent), like a green screen effect | How to play a video in AR with chromakey (green screen removal) using a custom shader | Print the image target. Video files `mask_*.mp4` are included |
-| 06 | [Audio](examples/06_audio.html) | A speaker icon appears and music starts playing when the image is detected; stops when you look away | How to trigger sound when the phone sees the image and stop it when the image is lost | Print the image target. Audio file `bass-loops-077...mp3` is included |
-| 07 | [p5.js](examples/07_p5js.html) | A colorful animated pattern (generated live by code) is displayed as a texture on a 3D plane | How to use p5.js (a creative coding library popular in design schools) to generate visuals and map them onto a 3D surface in AR | Just print the image target |
-| 08 | [Gaussian Splat](examples/08_gaussian_splat.html) | A photorealistic 3D scan (point cloud) appears above the image | How to display Gaussian Splat captures (a new 3D scanning technique) in AR | Print the image target. The file `splat_30000.sog` (19 MB) is included |
-| 09 | [Multi Targets](examples/09_multi_targets.html) | Four different images are each recognized and display different colored shapes and labels | How to track multiple images at the same time, each triggering its own AR content | Print all 4 image targets (see below) |
+| Folder | Kind of AR | Technology |
+|--------|-----------|------------|
+| [`image_target_8thFrame/`](image_target_8thFrame/) | Image target | A-Frame (8frame 1.3.0, Three.js r137) |
+| [`image_target_Threejs/`](image_target_Threejs/) | Image target | Raw Three.js r178 + `lib/xr8-three-bootstrap.js` |
+| [`world_8thFrame/`](world_8thFrame/) | World effect (tap to place) | A-Frame + `lib/tap-to-place.js` |
+| [`world_Threejs/`](world_Threejs/) | World effect (tap to place) | Raw Three.js r178 + `lib/xr8-three-world-bootstrap.js` |
+
+| # | Topic | What you will see | What it teaches you |
+|---|-------|-------------------|---------------------|
+| 01 | Primitives | Six animated coloured shapes (cube, sphere, cylinder, cone, torus, ring) | Placing basic 3D shapes, colours, positions, simple animations |
+| 02 | Text & Fonts | Text in several fonts | Text in AR: MSDF fonts (A-Frame & image-target Three.js), [troika-three-text](https://github.com/protectwise/troika/tree/main/packages/troika-three-text) (world Three.js) |
+| 03 | Images | The same picture on three stacked planes | Showing flat images in AR |
+| 04 | 3D Models | A plant and an animated character | Loading `.glb` files (from Blender, Sketchfab…) and playing their animations |
+| 05 | Video Chroma (green screen) | A video with its green background removed | Video in AR with a chromakey (green-screen) shader |
+| 05b | Video Chroma + Audio | Same as 05 with music (image target A-Frame only) | Combining video and sound on one target |
+| 06 | Audio | A speaker icon and music | Starting/stopping sound when the image is found/lost (or when content is placed) |
+| 07 | p5.js | An animated pattern drawn live by a p5.js sketch on a 3D plane | Using p5.js (creative coding) as a live texture |
+| 08 | Gaussian Splat | A photorealistic 3D scan | Displaying Gaussian Splat captures in AR |
+| 09 | Multi Targets / Multi Placement | Image: 7 different images each trigger their own content. World: each tap places the next object | Tracking several images at once / placing several objects |
 
 ---
 
-## Raw Three.js Examples
+## Which set should I start with?
 
-The `examples_threejs/` folder contains the **same 9 examples rewritten with raw Three.js r178** and XR8 camera pipeline hooks — no A-Frame, no 8frame.
-
-### Why a second set?
-
-The A-Frame examples use 8frame 1.3.0 which bundles Three.js r137. Modern libraries like [Spark.js](https://sparkjs.dev/) (Gaussian Splatting) require Three.js r178+. We tried several workarounds:
-
-- Polyfilling missing Three.js APIs — fixes JS renames but cannot patch shader compilation
-- Loading two Three.js versions side by side — the r137 renderer crashes on r178 materials (`material.onBuild is not a function`)
-- Switching to standard A-Frame 1.7.0 — bundles r173, still too old
-
-The solution: bypass A-Frame entirely and use Three.js r178 directly with XR8's pipeline API.
-
-### Architecture
-
-All examples share a common bootstrap module (`examples_threejs/lib/xr8-three-bootstrap.js`) that handles:
-- Three.js renderer setup (sharing XR8's GL context)
-- Camera feed background via `XR8.GlTextureRenderer`
-- Image target events (`xrimagefound`, `xrimageupdated`, `xrimagelost`)
-- Loading overlay and default lighting
-
-Each example is an ES module that imports `three` from [esm.sh](https://esm.sh) via an import map:
-
-```html
-<script type="importmap">
-{ "imports": { "three": "https://esm.sh/three@0.178.0" } }
-</script>
-```
-
-### Three.js examples list
-
-| # | Example | Key library | Difference from A-Frame version |
-|---|---------|-------------|-------------------------------|
-| 01 | [Primitives](examples_threejs/01_primitives.html) | Three.js core | Manual geometry/material, render-loop animations |
-| 02 | [Text & Fonts](examples_threejs/02_text_msdf.html) | [troika-three-text](https://github.com/protectwise/troika/tree/main/packages/troika-three-text) | SDF text from .woff2 fonts (no MSDF JSON atlas needed) |
-| 03 | [Images](examples_threejs/03_images.html) | Three.js TextureLoader | PlaneGeometry + MeshBasicMaterial |
-| 04 | [3D Models](examples_threejs/04_3d_models.html) | GLTFLoader + AnimationMixer | Standard Three.js pattern (replaces aframe-extras) |
-| 05 | [Video Chroma](examples_threejs/05_video_chroma.html) | VideoTexture + ShaderMaterial | Same GLSL shader, direct ShaderMaterial instead of registerShader |
-| 06 | [Audio](examples_threejs/06_audio.html) | Web Audio API | Same `new Audio()`, tracking callbacks from bootstrap |
-| 07 | [p5.js](examples_threejs/07_p5js.html) | p5.js + CanvasTexture | Identical p5 sketch, texture update in render loop |
-| 08 | [**Gaussian Splat**](examples_threejs/08_gaussian_splat.html) | **Spark.js (SplatMesh)** | **Works natively** — loads `.sog` files directly, no polyfills |
-| 09 | [Multi Targets](examples_threejs/09_multi_targets.html) | Map-based group routing | One THREE.Group per target, callbacks route by name |
+- **New to code?** Start with `image_target_8thFrame/` — everything is HTML tags. Then try `world_8thFrame/`.
+- **You know some JavaScript?** The `*_Threejs` folders show what A-Frame does for you, and give you access to the whole Three.js ecosystem.
+- **Gaussian splats:** prefer the Three.js versions (Spark.js, `.sog` files, 5 MB). The A-Frame version needs a workaround library and a 48 MB file (see [Known limitations](#known-limitations)).
+- **Testing on a laptop:** the `image_target_Threejs/` examples also run with a laptop webcam (hold the printed target in front of it). World tracking only works on a phone or tablet.
 
 ---
 
@@ -120,49 +101,39 @@ Each example is an ES module that imports `three` from [esm.sh](https://esm.sh) 
 
 ### Image targets (print these)
 
-These are the images the phone camera will recognize. **You must print them on paper** (A4 works well) or display them on another screen (tablet, second monitor). The AR will not work without them.
+These are the images the camera recognises. **Print them** (A4 is fine) or display them on another screen. They are in `assets/Targets/`.
 
-| Image file | Dimensions | Used in | What it looks like |
-|-----------|------------|---------|-------------------|
-| `assets/Target_1000055040bw-resize-640x480.jpg` | 480 x 640 px | Examples 01 to 08 | Black and white geometric pattern |
-| `assets/Target_cat_640.jpg` | 480 x 640 px | Example 09 | Photo of a cat |
-| `assets/Target_snowflakes_640.jpg` | 478 x 640 px | Example 09 | Snowflake design |
-| `assets/Target_dragongly_640_640.jpg` | 640 x 640 px | Example 09 | Photo of a dragonfly |
+| Image file | Size (px) | Used in |
+|-----------|-----------|---------|
+| `Target_1000055040.jpg` | 830 × 830 | Examples 01 to 08, and target A of example 09 |
+| `Target_cat.jpg` | 584 × 937 | Example 09 (target B) |
+| `Target_drawing.jpg` | 800 × 972 | Example 09 (target C) |
+| `Target_dragonfly.jpg` | 934 × 754 | Example 09 (target D) |
+| `Target_wall_close.jpg` | 994 × 768 | Example 09 (target E) |
+| `Target_wall_large.jpg` | 986 × 564 | Example 09 (target F) |
+| `Target_wall_detail.jpg` | 524 × 772 | Example 09 (target G) |
 
-> **Tip:** For best results, print images at a decent size (at least 10 cm wide) with good contrast. Avoid glossy paper that creates reflections. Make sure the image is flat and well-lit.
+World examples need no target — just a reasonably textured floor or table (a plain white floor is hard to track).
 
-### 3D Models
+> **Tip:** print at least 10 cm wide, with good contrast, on matte paper (glossy paper reflects light). Keep it flat and well-lit.
 
-| File | Size | Description |
-|------|------|-------------|
-| `assets/plant_modelling.glb` | 259 KB | A static plant. GLB is a standard 3D file format you can export from Blender, Sketchfab, etc. |
-| `assets/satanim3.glb` | 1.4 MB | An animated character with built-in skeletal animation |
+### Media files (`assets/`)
 
-### Audio
+| File | Size | Used in |
+|------|------|---------|
+| `plant_modelling.glb` | 259 KB | 04 — static plant model |
+| `satanim3.glb` | 1.4 MB | 04 — animated character |
+| `634332__josefpres__bass-loops-077-with-drums-long-loop-120-bpm.mp3` | 189 KB | 05b, 06 — music loop (use this one) |
+| `634332__josefpres__bass-loops-077-with-drums-long-loop-120-bpm.wav` | 2.1 MB | Same track, WAV (not used, heavier) |
+| `mask_green_sil.mp4` | 603 KB | 05 — silhouette on a green background |
+| `mask_*_back.mp4`, `mask_blue_sil.mp4`, `mask_red_sil.mp4`, `mask.mp4`, `video.mp4` | 0.4–2.8 MB | Other test videos (blue/red/white backgrounds) |
+| `export1.png` | 27 KB | 03 — sample image |
+| `flower_14p.sog` | 5.3 MB | 08 (Three.js) — Gaussian splat |
+| `flower_38p.sog` | 15 MB | Higher-quality version of the same splat (not used) |
+| `splat_30000.sog` | 19 MB | Another splat in `.sog` format (not used) |
+| `splat_30000.splat` | 48 MB | 08 (A-Frame) — same capture in `.splat` format |
 
-| File | Size | Description |
-|------|------|-------------|
-| `assets/bass-loops-077-with-drums-long-loop-120-bpm.mp3` | 189 KB | A looping bass music track (MP3 format — lighter, use this one) |
-| `assets/bass-loops-077-with-drums-long-loop-120-bpm.wav` | 2.1 MB | Same track in WAV format (heavier, better quality) |
-
-### Video
-
-| File | Size | Description |
-|------|------|-------------|
-| `assets/mask_green_sil.mp4` | 603 KB | A silhouette filmed on a green background — the green is removed in AR |
-| `assets/mask_green_back.mp4` | 818 KB | Same subject, green background variant |
-| `assets/mask_blue_back.mp4` / `mask_blue_sil.mp4` | ~550 KB each | Blue background variants |
-| `assets/mask_red_back.mp4` / `mask_red_sil.mp4` | ~550 KB each | Red background variants |
-| `assets/mask_white_back.mp4` | 460 KB | White background variant |
-| `assets/mask.mp4` | 2.8 MB | Full background version |
-| `assets/video.mp4` | 370 KB | Generic video |
-
-### Other
-
-| File | Size | Description |
-|------|------|-------------|
-| `assets/export1.png` | 27 KB | A sample image used in Example 03 |
-| `assets/splat_30000.sog` | 19 MB | A 3D Gaussian Splat capture (30,000 points). This is a new photogrammetry format for photorealistic 3D scans |
+> File names are **case-sensitive** once published (GitHub Pages runs on Linux): `export1.png` and `Export1.png` are different files. A wrong case works on Windows and then fails online.
 
 ---
 
@@ -170,233 +141,209 @@ These are the images the phone camera will recognize. **You must print them on p
 
 ### Step 1: Fork the repository (make your own copy)
 
-A "fork" creates your own copy of this project on your GitHub account. You can then modify it freely without affecting the original.
+A "fork" creates your own copy of this project on your GitHub account, which you can modify freely.
 
-1. **Create a GitHub account** if you don't have one: go to [github.com](https://github.com) and sign up (it's free)
-2. Go to the original repository page on GitHub
-3. Click the **Fork** button in the top-right corner
-4. GitHub creates a copy under your account. You now have your own version at `https://github.com/<your-username>/Aframe_8thwall_binary`
+1. **Create a GitHub account** if you don't have one: [github.com](https://github.com) (free)
+2. Go to the original repository: [github.com/b2renger/Aframe_8thwall_binary](https://github.com/b2renger/Aframe_8thwall_binary)
+3. Click **Fork** (top-right)
+4. You now have your own copy at `https://github.com/<your-username>/Aframe_8thwall_binary`
 
 ### Step 2: Choose your working environment
 
-You have two options :
-- **Option A (Firebase Studio)** is the easiest — everything runs in the browser, no software to install. 
-- **Option B (VS Code)** gives you more control and works offline.
+- **Option A (Firebase Studio)** — everything runs in the browser, nothing to install.
+- **Option B (VS Code)** — on your computer; more control, and the easiest way to test on your phone (Step 3).
 
 ---
 
-#### Option A: Firebase Studio (easiest, works in the browser)
+#### Option A: Firebase Studio (works in the browser)
 
-Firebase Studio (formerly called Project IDX) is a free online code editor from Google. It runs VS Code in your browser with a built-in web server and preview — no installation needed.
+Firebase Studio (formerly Project IDX) is a free online code editor from Google: VS Code in your browser, with a built-in web server and preview.
 
-1. Open [Firebase Studio](https://idx.google.com/) in your browser
-2. Click **Import a repo**
-3. Paste the URL of **your fork**: `https://github.com/<your-username>/Aframe_8thwall_binary`
-4. Click **Import**
-5. Wait for the environment to load (this takes 1-2 minutes the first time). Firebase Studio will automatically install Node.js and Python based on the included configuration file (`.idx/dev.nix`)
-6. Once loaded, you will see VS Code in your browser with the project files on the left
-7. A **web preview** panel should appear automatically. If it doesn't, look for the "Preview" button in the bottom toolbar, or press `Ctrl+Shift+P` and type "IDX: Show Web Preview"
-8. In the preview panel, you should see the landing page with 9 cards — one per example
-9. Click on any example card to open it. **Note:** The preview runs inside the Firebase Studio frame, so camera access may not work directly in the preview. To test on your phone, see Step 3 below.
+1. Open [Firebase Studio](https://idx.google.com/)
+2. Click **Import a repo**, paste the URL of **your fork**, click **Import**
+3. Wait for the environment to load (1–2 minutes the first time). It is configured by `.idx/dev.nix`
+4. A **web preview** panel shows the landing page. If not: `Ctrl+Shift+P` → type **Web Preview** and pick *Show Web Preview*
+5. The preview runs inside the editor frame, so the camera may not work there — use your phone (Step 3)
 
-**To edit an example:**
-- Open any file in `examples/` from the file tree on the left (for example, `examples/01_primitives.html`)
-- Make a copy of this file and change its name.
-- Make a change (for example, change `color="#FF0055"` to `color="blue"`)
-- Save the file (`Ctrl+S`)
-- Refresh the preview panel to see the change
+**To edit an example:** open a file (e.g. `image_target_8thFrame/01_primitives.html`), make a copy **in the same folder** with a new name without spaces (e.g. `my_poster.html`), change something (e.g. `color="#FF0055"` → `color="blue"`), save (`Ctrl+S`) and refresh the preview. See [Making your own page](#making-your-own-page) for why the copy must stay in the same folder.
 
-If you want your experience to work when you load the page you need to rename the modified example to "index.html" this file is the one that load automatically (rename the file with the cards and all the examples into something like 'landingpage.html').
-
-**To push your changes back to GitHub:**
-- Click the Source Control icon in the left sidebar (the branch icon)
-- You will see your changed files listed
-- Type a short message describing what you changed (for example: "Changed cube color to blue")
-- Add the files you changed 
-- Click **Commit & Push** 
+**To push your changes to GitHub:** Source Control icon (left sidebar) → type a message → stage your files → **Commit & Push**.
 
 ---
 
-#### Option B: VS Code on your computer with Live Server
+#### Option B: VS Code on your computer
 
-This option requires installing software on your machine, but gives you full control and works offline.
+**1. Install:**
 
-**1. Install the required software:**
+- **VS Code**: [code.visualstudio.com](https://code.visualstudio.com/)
+- **Git**: [git-scm.com](https://git-scm.com/) (default options are fine)
 
-- **VS Code**: Download from [code.visualstudio.com](https://code.visualstudio.com/) and install it
-- **Git**: Download from [git-scm.com](https://git-scm.com/) and install it (keep all default options during installation)
-
-**2. Clone (download) your fork:**
-
-Open a terminal (on Windows: press `Win+R`, type `cmd`, press Enter) and run:
+**2. Clone your fork** (Windows: `Win+R`, type `cmd`, Enter):
 
 ```bash
 git clone https://github.com/<your-username>/Aframe_8thwall_binary.git
-```
-
-Replace `<your-username>` with your actual GitHub username. This downloads all the files to a folder called `Aframe_8thwall_binary` on your computer.
-
-**3. Open the project in VS Code:**
-
-```bash
 cd Aframe_8thwall_binary
 code .
 ```
 
-Or: open VS Code, then go to **File > Open Folder** and select the `Aframe_8thwall_binary` folder.
+Or in VS Code: **File > Open Folder** and select `Aframe_8thwall_binary`.
 
-**4. Install the Live Server extension:**
+**3. Install the Live Server extension:** Extensions icon (`Ctrl+Shift+X`) → search **Live Server** (by Ritwick Dey) → **Install**.
 
-Live Server is a VS Code extension that runs a local web server so you can preview your pages in a browser.
+**4. Start it:** right-click `index.html` → **Open with Live Server**. Your browser opens `http://127.0.0.1:5500/index.html`.
 
-1. In VS Code, click the **Extensions** icon in the left sidebar (or press `Ctrl+Shift+X`)
-2. In the search bar, type **Live Server**
-3. Find **Live Server** by **Ritwick Dey** (it should be the first result, with millions of downloads)
-4. Click **Install**
+That is enough to test on your computer (`localhost` counts as secure), with one limit: only the `image_target_Threejs/` examples work with a laptop webcam (hold the printed target in front of it). The A-Frame examples show an "open this on your phone" screen (or a QR code), and the world examples need a phone. That is normal, not a broken setup. For the phone, continue with Step 3.
 
-**5. Set up HTTPS (required for camera access on phones):**
-
-AR needs camera access, and browsers only allow camera access on secure (HTTPS) pages. Live Server runs on HTTP by default. You need to create a security certificate and configure Live Server to use it.
-
-
-Open **Git Bash** (installed with Git for Windows, or the default terminal on macOS/Linux), navigate to your project folder, and run:
-
-```bash
-cd /path/to/Aframe_8thwall_binary
-
-# Generate a self-signed certificate (valid for 365 days)
-MSYS_NO_PATHCONV=1 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
-```
-
-> **Windows note:** The `MSYS_NO_PATHCONV=1` prefix is required on Windows. Without it, Git Bash converts `/CN=localhost` into a Windows-style path (e.g., `C:/msys64/CN=localhost`) and the command silently fails. On macOS/Linux it is harmless and can be omitted.
-
-**6. Configure Live Server to use HTTPS:**
-
-1. In VS Code, press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac)
-2. Type **Preferences: Open Settings (JSON)** and select it
-3. Add the following lines inside the curly braces `{}` (if there are already settings, add a comma after the last one and paste these below):
-
-```json
-"liveServer.settings.https": {
-    "enable": true,
-    "cert": "./cert.pem",
-    "key": "./key.pem",
-    "passphrase": ""
-},
-"liveServer.settings.host": "0.0.0.0",
-"liveServer.settings.port": 5501
-```
-
-> `"host": "0.0.0.0"` means the server is accessible from other devices on your Wi-Fi network (your phone). `"port": 5501` is the port number you will use in the URL.
-
-> **Important:** The `./cert.pem` and `./key.pem` paths are **relative to the workspace folder you open in VS Code**. You must open the `Aframe_8thwall_binary` folder directly (File > Open Folder) — not a parent folder — so that Live Server can find the certificate files at the root. If Live Server fails to start, this is the most common cause.
-
-**7. Start Live Server:**
-
-1. In VS Code, right-click on `index.html` in the file explorer
-2. Click **Open with Live Server**
-3. Your default browser should open with the page. You may see a security warning because the certificate is self-signed — click **Advanced** then **Proceed** (this is normal and safe for local development)
+> **Don't use `python -m http.server` on Windows.** It often serves `.js` files with the wrong type (`text/plain`), and the AR engine then fails with *"Failed to load module script … MIME type of text/plain"*. Live Server doesn't have this problem.
 
 ---
 
 ### Step 3: Test on your phone
 
-Your phone and your computer must be on the **same Wi-Fi network**.
+Your phone needs an **HTTPS** address. Pick one of these options.
 
-**1. Find your computer's local IP address:**
+#### Option 1 (recommended): VS Code port forwarding — real HTTPS, no certificate
 
-- **Windows**: Open a Command Prompt and type `ipconfig`. Look for the line that says **IPv4 Address** under your Wi-Fi adapter (it looks like `192.168.1.42`)
-- **macOS**: Open Terminal and type `ifconfig | grep "inet "`. Look for the address that starts with `192.168.` or `10.`
-- **Firebase Studio**: Your preview URL is already accessible from any device — look for the URL in the preview panel (it looks like `https://xxxx.idx.dev`)
+VS Code can open a secure tunnel (Microsoft *dev tunnels*) to your local server and give you a public `https://` address. The certificate is a real one, so the phone shows **no security warning**, and the phone **doesn't even need to be on the same Wi-Fi** (4G works too).
 
-**2. Open the URL on your phone:**
+1. Start **Live Server** normally (Step 2, Option B). Leave its settings at default (plain HTTP, port **5500**).
+2. In VS Code open the **Ports** panel: it's a tab next to *Terminal* at the bottom. If you don't see it: `Ctrl+Shift+P` → **Ports: Focus on Ports View**.
+3. Click **Forward a Port**, type `5500`, press Enter.
+4. The first time, VS Code asks you to **sign in with GitHub** — accept.
+5. A line appears with a **Forwarded Address** like `https://abc123xy-5500.euw.devtunnels.ms`.
+6. **Make it public:** right-click the line → **Port Visibility** → **Public**.
+   (By default the port is *Private*: the phone would have to sign in to your GitHub account to open it.)
+7. Open that address on your phone: right-click the line → **Copy Local Address** (despite the name, it copies the `https://…devtunnels.ms` address), then send it to yourself by email or chat. Add the page path if needed, e.g. `https://abc123xy-5500.euw.devtunnels.ms/index.html`.
+8. The first time, Microsoft may show a *"You are about to connect to a developer tunnel"* page: tap **Continue**.
 
-- If using **VS Code + Live Server**: open your phone's browser and go to `https://192.168.x.x:5501` (replace with your actual IP)
-  - Your phone will show a security warning (because of the self-signed certificate). Tap **Advanced** > **Proceed anyway** (on Chrome) or **Continue** (on Safari)
-- If using **Firebase Studio**: open the preview URL directly on your phone
+Good to know:
 
-**3. Try an example:**
+- The address stays the same as long as you keep forwarding the same port, so you can bookmark it on the phone.
+- When you're done, right-click the port → **Stop Forwarding Port**. A public port is reachable by **anyone who has the link** while it's open — don't leave it running with private files in the folder.
+- Live reload keeps working: save in VS Code and the page on the phone refreshes.
+- If you already did Option 2, Live Server now uses HTTPS on port **5501**. Either delete the three `liveServer.settings.*` lines from your settings (Live Server goes back to HTTP on 5500), or forward port **5501** instead of 5500, then right-click it → **Change Port Protocol** → **HTTPS**.
 
-1. You should see the landing page with 9 example cards
-2. Tap on any example (start with **01 — Primitives**)
-3. The page will ask for camera permission — tap **Allow**
-4. Point your camera at the printed image target
-5. 3D content should appear on the image!
+#### Option 2: Live Server with a self-signed certificate (same Wi-Fi)
 
-> **Troubleshooting:** If nothing appears, make sure:
-> - The image target is printed clearly, well-lit, and lying flat
-> - You are using the correct image (Examples 01-08 use the black-and-white geometric pattern; Example 09 uses the four different images)
-> - The page is loaded over HTTPS (check the URL starts with `https://`)
-> - You gave camera permission when prompted
+Works without any account, but your phone will show a security warning, and phone and computer must be on the **same Wi-Fi network** (some school/office networks block this).
+
+1. Create a certificate. Open a terminal in the project folder: in VS Code, **Terminal → New Terminal**. On Windows, click the small **˅** arrow next to **+** in the terminal panel and choose **Git Bash** (it's installed with Git). On macOS/Linux, the default terminal is fine. Then run:
+
+   ```bash
+   # Self-signed certificate valid 365 days
+   MSYS_NO_PATHCONV=1 openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=localhost"
+   ```
+
+   > `MSYS_NO_PATHCONV=1` is needed on Windows: without it Git Bash turns `/CN=localhost` into a Windows path and the command fails. Harmless on macOS/Linux. `key.pem` and `cert.pem` are listed in `.gitignore`, so they won't be published.
+
+2. `Ctrl+Shift+P` → **Preferences: Open Settings (JSON)** and add:
+
+   ```json
+   "liveServer.settings.https": {
+       "enable": true,
+       "cert": "C:/Users/you/Documents/Aframe_8thwall_binary/cert.pem",
+       "key": "C:/Users/you/Documents/Aframe_8thwall_binary/key.pem",
+       "passphrase": ""
+   },
+   "liveServer.settings.host": "0.0.0.0",
+   "liveServer.settings.port": 5501
+   ```
+
+   Replace the two example paths with the **full paths** of your own `cert.pem` and `key.pem`: in the VS Code Explorer, right-click the file → **Copy Path** and paste it. On Windows, change every `\` to `/`, because JSON doesn't accept single backslashes (on macOS a path looks like `/Users/you/Documents/Aframe_8thwall_binary/cert.pem`). A short path like `./cert.pem` does **not** work: Live Server doesn't look for it in your project folder, so it can't find the file and won't start in HTTPS mode. Paste the block **inside** the outer `{ }` of the settings file, and put a comma at the end of the line just above it. `"host": "0.0.0.0"` makes the server reachable from other devices on your Wi-Fi.
+
+3. Find your computer's IP: Windows `ipconfig` (→ **IPv4 Address**, e.g. `192.168.1.42`), macOS `ipconfig getifaddr en0`.
+4. **Windows only:** the first time Live Server starts with these settings, Windows may ask whether to let *Visual Studio Code* through the firewall. Tick **Private networks** and click **Allow**. If the phone still can't load the page (it spins, then times out), your Wi-Fi is probably marked as *Public*: set it to **Private network** in Settings → Network & internet → Wi-Fi → your network. If you can't change these settings (school computer), use Option 1.
+5. On the phone open `https://192.168.x.x:5501` and accept the warning: **Advanced → Proceed** (Chrome) or **Show Details → visit this website** (Safari).
+
+#### Option 3: Firebase Studio
+
+In the Web Preview panel, click the **Open in new window** icon in its top toolbar. Copy the address of the tab that opens (it looks like `https://xxxx.idx.dev` or `…cloudworkstations.dev`) and open it on your phone. It is HTTPS already. You may need to sign in to the same Google account on the phone.
+
+#### Try an example
+
+1. The landing page shows all the example cards
+2. Tap one (start with **Image Target — A-Frame → 01 Primitives**)
+3. Allow camera access
+4. Point at the printed target — or, for world examples, move the phone slowly for a few seconds then tap the floor
+5. 3D content appears!
+
+> **Troubleshooting:** nothing appears?
+> - The URL must start with `https://` (or be `localhost` on the computer)
+> - You allowed the camera (if you refused once: browser site settings → Camera → Allow, then reload)
+> - Image targets: the right image (01–08 use `Target_1000055040.jpg`), printed clearly, flat and well lit
+> - World: textured floor, good light, move the phone sideways a bit before tapping
+> - Still stuck? Turn on the [on-phone console](#mobile-debugging--how-to-see-errors-on-your-phone) and read the red errors
 
 ---
 
 ### Step 4: Publish to GitHub Pages (make it public)
 
-GitHub Pages is a free hosting service from GitHub. It gives you a public HTTPS URL that anyone can open on their phone.
+GitHub Pages is free hosting with a permanent HTTPS address anyone can open.
 
-1. First, make sure your changes are pushed to GitHub:
-   - In VS Code: open the terminal (`Ctrl+``) and run:
+1. Push your changes:
+   - VS Code: terminal (`Ctrl+ù` / ``Ctrl+` ``).
+     **Only the very first time on this computer**, tell Git who you are (otherwise `git commit` stops with "Author identity unknown"):
+     ```bash
+     git config --global user.name "Your Name"
+     git config --global user.email "you@example.com"
+     ```
+     Then, every time you want to publish:
      ```bash
      git add .
      git commit -m "My changes"
      git push
      ```
-   - In Firebase Studio: use the Source Control panel (see Option A above)
-
-2. Go to your fork on GitHub: `https://github.com/<your-username>/Aframe_8thwall_binary`
-
-3. Click **Settings** (the gear icon in the top menu bar — not the gear in the About section)
-
-4. In the left sidebar, click **Pages**
-
-5. Under **Source**, select **Deploy from a branch**
-
-6. Under **Branch**, select **main** and leave the folder as **/ (root)**
-
-7. Click **Save**
-
-8. Wait 2-3 minutes. GitHub will build and deploy your site.
-
-9. Refresh the Settings > Pages page. A green banner will appear with your URL:
-   ```
-   https://<your-username>.github.io/Aframe_8thwall_binary/
-   ```
-
-10. Open this URL on your phone. You can share it with anyone — they just scan the QR code or type the URL.
+     On the first `git push`, a window opens asking you to sign in to GitHub: accept it.
+   - Firebase Studio: Source Control panel (see Option A)
+2. On GitHub, open your fork → **Settings** (top menu) → **Pages** (left sidebar)
+3. **Source**: *Deploy from a branch* — **Branch**: `main`, folder `/ (root)` — **Save**
+4. Wait 2–3 minutes and refresh: the address appears, `https://<your-username>.github.io/Aframe_8thwall_binary/`
+5. Open it on any phone, share it, make a QR code of it.
 
 ---
 
 ## How to Modify the Examples
 
-### Understanding the HTML structure
+### Making your own page
 
-Every example is a single `.html` file that follows the same pattern. Here is what each part does:
+1. Make a copy of an example **in the same folder** as the original, with a new name without spaces (e.g. `image_target_8thFrame/my_poster.html`). In VS Code: right-click the file → **Copy**, right-click the folder → **Paste**, then `F2` to rename it.
+2. Keep it in that folder. The paths inside it start with `../`, which means "go up one folder" (`../engine/xr.js`, `../assets/…`, `../eruda-debug.js`), or with `lib/` (the helper file next to it). If you move the file elsewhere, it can't find them and the page stays black.
+3. To open it easily, add a card on the landing page: in `index.html`, copy one `<a class="card blue" href="…">…</a>` block and change its `href` to your file (e.g. `image_target_8thFrame/my_poster.html`).
+
+**Make your experience the home page (optional).** To open it at `https://<you>.github.io/Aframe_8thwall_binary/`, it must be in the project's root folder and be called `index.html`:
+
+1. Rename the current landing page (e.g. to `landingpage.html`).
+2. Move your file to the root folder and rename it `index.html`.
+3. Fix its paths, because the file is now one folder higher. Use Find (`Ctrl+F`) for `../` and delete every one, including inside attributes (`src: ../assets/…`) and inside JavaScript strings: `../engine/xr.js` → `engine/xr.js`, `../assets/…` → `assets/…`, `../eruda-debug.js` → `eruda-debug.js`. Where a path had no `../`, add the folder name in front: `lib/tap-to-place.js` → `world_8thFrame/lib/tap-to-place.js`, `./lib/xr8-three-bootstrap.js` → `./image_target_Threejs/lib/xr8-three-bootstrap.js`, `./lib/xr8-three-world-bootstrap.js` → `./world_Threejs/lib/xr8-three-world-bootstrap.js`.
+4. Test the **published** URL. Live Server and the dev tunnel ignore a leftover `../`, but GitHub Pages does not. If the page stays black, open the console (`?debug`) and look for red `Could not load …` or 404 lines: they name the path you missed. If the eruda gear button doesn't appear at all, the path to `eruda-debug.js` itself is the one you missed — or open the published page on your computer and press `F12` → Console, which lists every missing file.
+
+### Understanding the HTML structure (A-Frame image target)
 
 ```html
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
+  <!-- On-phone console: off unless switched on with ?debug or the landing-page box (see Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
+
   <!-- PART 1: Load the libraries -->
-  <!-- 8frame = A-Frame (the 3D framework). Loaded from 8th Wall's CDN. -->
-  <script src="https://cdn.8thwall.com/web/aframe/8frame-1.3.0.min.js"></script>
-  <!-- XRExtras = loading screen, camera prompts, error messages -->
-  <script src="https://cdn.8thwall.com/web/xrextras/xrextras.js"></script>
-  <!-- The AR engine itself (self-hosted in the engine/ folder) -->
-  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>
+  <script src="https://cdn.8thwall.com/web/aframe/8frame-1.3.0.min.js"></script>  <!-- A-Frame -->
+  <script src="https://cdn.8thwall.com/web/xrextras/xrextras.js"></script>         <!-- loading/error screens -->
+  <script async src="../engine/xr.js" data-preload-chunks="slam"></script>        <!-- the AR engine ("slam" = its tracking part) -->
 
   <!-- PART 2: Tell the engine which image to look for -->
   <script>
     const onxrloaded = () => {
       XR8.XrController.configure({
         imageTargetData: [{
-          "name": "my-poster",          // A name you choose (must match below)
-          "type": "PLANAR",             // The image is flat (a poster/print)
-          "imagePath": "../assets/Target_1000055040bw-resize-640x480.jpg",
+          "name": "my-poster",          // A name you choose (must match PART 4)
+          "type": "PLANAR",             // A flat image
+          "imagePath": "../assets/Targets/Target_1000055040.jpg",
           "properties": {
             "left": 0, "top": 0,
-            "width": 480, "height": 640,         // Image dimensions in pixels
-            "originalWidth": 480, "originalHeight": 640,
+            "width": 830, "height": 830,              // image size in pixels
+            "originalWidth": 830, "originalHeight": 830,
             "isRotated": false
           }
         }]
@@ -406,25 +353,26 @@ Every example is a single `.html` file that follows the same pattern. Here is wh
   </script>
 </head>
 <body>
-  <!-- PART 3: The 3D scene -->
+  <!-- PART 3: The 3D scene. Keep these attributes as they are:
+       xrextras-loading / -almost-there / -runtime-error = 8th Wall's loading screen,
+         "open this on your phone" screen and error screen
+       xrextras-gesture-detector = turns finger pinch/drag into events
+       vr-mode-ui="enabled: false" = hides A-Frame's VR-goggles button (this is AR)
+       xrweb="disableWorldTracking: true" = starts the AR engine, image targets only -->
   <a-scene
     xrextras-gesture-detector
     xrextras-almost-there
     xrextras-loading
     xrextras-runtime-error
+    vr-mode-ui="enabled: false"
     xrweb="disableWorldTracking: true">
 
-    <!-- Camera (required, do not remove) -->
-    <a-camera position="0 4 10"></a-camera>
+    <a-camera position="0 4 10"></a-camera>  <!-- the phone's camera: the AR engine moves it, keep this line as is -->
 
-    <!-- PART 4: Your AR content — everything inside this tag appears
-         on top of the detected image. The "name" must match the
-         name you chose in PART 2 above. -->
+    <!-- PART 4: everything inside appears on the detected image.
+         "name" must match the name in PART 2. -->
     <xrextras-named-image-target name="my-poster">
-
-      <!-- This is where you put your 3D objects -->
-      <a-box color="red" position="0 0.5 0"></a-box>
-
+      <a-box color="red" position="0 0 0.25" scale="0.5 0.5 0.5"></a-box>
     </xrextras-named-image-target>
 
   </a-scene>
@@ -432,191 +380,180 @@ Every example is a single `.html` file that follows the same pattern. Here is wh
 </html>
 ```
 
+World examples are the same without PART 2, with three changes: the scene uses `xrweb="disableWorldTracking: false"`; the content goes in an `<a-entity tap-to-place>` instead of `<xrextras-named-image-target>`; and the `<head>` loads that component after the engine with `<script src="lib/tap-to-place.js"></script>`. That path points to `world_8thFrame/lib/tap-to-place.js`, so keep your page in `world_8thFrame/`. Without this line, tapping does nothing and you won't see an error.
+
+### Coordinates and units
+
+The two kinds of AR use different axes — this is the most common source of "my model is lying on its back".
+
+**Image targets** (content inside `<xrextras-named-image-target>`, or in the Three.js group that follows the target):
+
+- **Origin (0, 0, 0)** = centre of the image
+- **X** = towards the right edge of the image
+- **Y** = towards the **top edge** of the image (in the plane of the paper)
+- **Z** = **out of the image**, towards you
+- **1 unit = the height of the image** (top edge to bottom edge, with `"isRotated": false` as in all the examples). A 1 × 1 plane exactly covers the square target. A landscape image is wider than 1 unit (e.g. `Target_wall_large.jpg`, 986 × 564 px, is 1.75 × 1), a portrait one is narrower. `0 0 0.5` floats half an image-height in front of it
+- Every `.glb` model is "Y-up": its top points along Y (Blender and other tools convert to this when they export). Inside an image target Y lies flat in the paper, so rotate the model with `rotation="90 0 0"` (Three.js: `model.scene.rotation.set(Math.PI / 2, 0, 0)`) to make it stand up out of the image (see example 04)
+
+**World effects:**
+
+- **Y = up**, the floor is at **y = 0**
+- The phone starts at `0 4 10` (`<a-camera position="0 4 10">`): its **height of 4 units sets the scale** — 4 units ≈ the height of the phone above the floor (≈ 1.2–1.5 m), so 1 unit ≈ 30–40 cm. To change the scale, change that height: a **bigger** number makes everything look **smaller** (`0 8 10` → 1 unit ≈ 15–20 cm), a smaller number makes it look bigger. In A-Frame, edit `<a-camera position>` in your file. In Three.js, edit `CAMERA_ORIGIN` in `world_Threejs/lib/xr8-three-world-bootstrap.js` (use Find, `Ctrl+F`) (this changes all the Three.js world examples)
+- Content is placed on the floor where you tap and turned to face you. No `rotation="90 0 0"` needed for models
+
 ### Changing the image target
 
-To use your own image instead of the included ones:
-
-1. **Choose a good image:** High contrast, lots of detail, not symmetric, not repetitive patterns. Photos, illustrations, and posters work well. Plain text or simple logos do not.
-2. **Place your image file** in the `assets/` folder (for example, `assets/my-image.jpg`)
-3. **Update the configuration** in the `<script>` block. Change `imagePath` to point to your file, and update `width` and `height` to match your image dimensions in pixels:
+1. **Choose a good image:** lots of detail and contrast, not symmetric, not repetitive. Photos, illustrations and posters work well; plain text or simple logos do not.
+2. **Put the file** in `assets/Targets/` (e.g. `assets/Targets/my-image.jpg`)
+3. **Update the configuration** with its path and its **exact pixel size**:
 
 ```javascript
 imageTargetData: [{
   "name": "my-poster",
   "type": "PLANAR",
-  "imagePath": "../assets/my-image.jpg",    // <-- your image file
+  "imagePath": "../assets/Targets/my-image.jpg",   // <-- your image
   "properties": {
     "left": 0, "top": 0,
-    "width": 800, "height": 600,            // <-- your image dimensions
+    "width": 800, "height": 600,                   // <-- its real size in pixels
     "originalWidth": 800, "originalHeight": 600,
     "isRotated": false
   }
 }]
 ```
 
-**Understanding the properties:**
+**Where to find this:** in the A-Frame examples (`image_target_8thFrame/`) it's in the `<script>` inside `<head>`. If you change `"name"`, give `<xrextras-named-image-target name="…">` in the `<body>` the same name, or your content won't appear. In the Three.js examples (`image_target_Threejs/`) the same object is in the `imageTargets: [ … ]` list passed to `startXR8({ … })` near the end of the file: the keys have no quotes there, but the values are the same.
 
 | Property | Description |
 |---|---|
-| `left`, `top` | Pixel offset of the target region within the source image. If you are using a standalone image (not a sprite sheet), keep both at **0**. These only matter when several targets are packed into a single atlas image — `left` and `top` then indicate where the sub-image starts. |
-| `width`, `height` | The pixel dimensions of the region the tracker should use. For a standalone image this is simply the image's pixel width and height. The **aspect ratio** (`width / height`) is critical: the engine uses it to know the shape of the target so it can compute the correct 3D pose. If these don't match the real image, tracking will be jittery or fail. |
-| `originalWidth`, `originalHeight` | The full pixel dimensions of the source file. For a standalone image, set them **equal to `width` and `height`**. When targets are packed in a sprite sheet, these describe the total atlas size so the engine can locate the sub-region defined by `left`, `top`, `width`, `height`. |
-| `isRotated` | Sprite-sheet flag. Set to `false` unless your atlas tool rotated the sub-image 90° to save space. |
+| `left`, `top` | Offset of the target inside the image file. Keep **0** for a normal image (they only matter when several targets are packed into one sprite sheet). |
+| `width`, `height` | Pixel size of the region to track — for a normal image, the image's own size. The **aspect ratio is critical**: the engine uses it to compute the 3D pose. If it doesn't match the file, tracking is jittery or content is offset. |
+| `originalWidth`, `originalHeight` | Pixel size of the whole file. For a normal image, **the same as `width` / `height`**. |
+| `isRotated` | Sprite-sheet flag. Keep `false`. |
 
-> **In practice**, for a single image target you only need to set `width` and `height` to your image's pixel dimensions and copy them into `originalWidth` / `originalHeight`. Keep `left` and `top` at 0 and `isRotated` at false.
+To check an image's size: Windows → right-click → Properties → Details; macOS → Finder → Get Info.
 
-**Preparing your image — resolution, color, and performance:**
+**Preparing your image:**
 
-- **Recommended resolution: 480–1024 px on the longest side.** The tracking engine downscales the image internally to extract feature points — it does not benefit from resolutions above ~1024 px. A 640×480 image tracks just as reliably as a 4K one.
-- **Do NOT use a 4K image as-is.** A 3840×2160 image weighs several MB. The engine must download it, decode it into a full-resolution bitmap in memory, and then downsample it before feature extraction. On a phone this means:
-  - **Longer startup** — the image must be fetched and decoded before tracking can begin.
-  - **Higher memory spike** — a 4K RGBA bitmap uses ~32 MB of RAM just for the decode step, which can cause frame drops or even a crash on low-end devices.
-  - **No tracking improvement** — the internal feature detector works at a fixed lower resolution regardless of input size. Extra pixels are thrown away.
-  - Resize beforehand to ~768 px on the longest side for the best balance of quality and performance.
-- **Keep the image in color (RGB).** The engine converts the image to grayscale internally for feature detection, but you should NOT pre-convert it to black and white yourself. Supplying a color image preserves more tonal information during the engine's own conversion pipeline. Manually converting to B&W can flatten details (e.g., two colors with different hues but similar brightness become the same gray), reducing the number of usable feature points and hurting tracking quality.
-- **Use JPEG for photos, PNG for graphics.** JPEG at 80–90% quality keeps file size small with negligible tracking impact. Use PNG only for images with sharp edges or transparency. Avoid uncompressed formats (BMP, TIFF).
-- **Aspect ratio matters more than resolution.** Make sure `width` and `height` in the configuration match the actual pixel dimensions of the file you provide. A mismatch causes the engine to compute an incorrect 3D pose, leading to jittery or offset AR content — even if the image is otherwise perfect for tracking.
+- **480–1024 px on the longest side.** The engine downscales internally; a 4K image only adds download time and a memory spike (≈ 32 MB to decode on the phone) without better tracking. ~768 px is a good choice.
+- **Keep it in colour.** The engine converts to greyscale itself; converting beforehand can merge colours of similar brightness and lose detail.
+- **JPEG (80–90 %) for photos, PNG for graphics.** Avoid BMP/TIFF.
 
-4. **Print your image** and test with your phone
+Then print it and test.
 
 ### Changing the 3D content
 
-Edit the content inside the `<xrextras-named-image-target>` tag. The coordinate system works like this:
-
-- **X axis** = left/right (positive = right)
-- **Y axis** = up/down (positive = up, away from the paper surface)
-- **Z axis** = forward/back (positive = towards you)
-- **Origin (0, 0, 0)** = the center of the detected image
-
-Some examples of things you can add:
+Edit what's inside `<xrextras-named-image-target>` (image) or `<a-entity tap-to-place>` (world). The positions below are written for **world effects** (Y = up). Inside an image target, Z comes out of the paper (see [Coordinates and units](#coordinates-and-units)), so swap the 2nd and 3rd numbers: the cube becomes `position="0 0 0.25"`, the sphere `position="0 0 1"` bouncing `to: 0 0 2`. Flat things (`<a-image>`, `<a-text>`) already face you there: `position="0 0 0.01"` lays them on the paper.
 
 ```html
-<!-- A red cube, half a unit above the image -->
-<a-box color="red" position="0 0.5 0"></a-box>
+<!-- A red cube -->
+<a-box color="red" position="0 0.25 0" scale="0.5 0.5 0.5"></a-box>
 
-<!-- A blue sphere with a bounce animation -->
+<!-- A blue sphere bouncing -->
 <a-sphere color="blue" position="0 1 0" radius="0.3"
-          animation="property: position; to: 0 2 0; dir: alternate;
-                     loop: true; dur: 1000"></a-sphere>
+          animation="property: position; to: 0 2 0; dir: alternate; loop: true; dur: 1000"></a-sphere>
 
 <!-- A text label -->
-<a-text value="Hello AR!" color="white" position="0 1.5 0"
-        align="center" width="4"></a-text>
+<a-text value="Hello AR!" color="white" position="0 1.5 0" align="center" width="4"></a-text>
 
 <!-- A flat image -->
-<a-image src="../assets/my-photo.jpg" position="0 1 0"
-         width="2" height="1.5"></a-image>
+<a-image src="../assets/my-photo.jpg" position="0 1 0" width="2" height="1.5"></a-image>
 ```
 
-See the [A-Frame documentation](https://aframe.io/docs/) for the full list of shapes, materials, animations, and components you can use.
+See the [A-Frame documentation](https://aframe.io/docs/1.3.0/) for all shapes, materials, animations and components. For the Three.js versions, see the [Three.js manual](https://threejs.org/manual/).
 
 ### Adding your own assets
 
-1. Put your files (images, 3D models, videos, audio) in the `assets/` folder
-2. If they need to be preloaded (videos, 3D models, audio), declare them in the `<a-assets>` section:
+1. Put the files in `assets/` (mind the upper/lower case in file names)
+2. In A-Frame, preload heavy assets in `<a-assets>`. Put it **inside `<a-scene>`**, as its first child (not in `<head>`). See example 04:
 
 ```html
 <a-assets>
   <video id="my-video" src="../assets/my-video.mp4" loop muted playsinline crossorigin="anonymous"></video>
   <a-asset-item id="my-model" src="../assets/my-model.glb"></a-asset-item>
   <img id="my-image" src="../assets/my-photo.jpg" crossorigin="anonymous">
-  <audio id="my-audio" src="../assets/my-sound.mp3" loop></audio>
 </a-assets>
 ```
 
-3. Then reference them by their `id` using the `#` prefix:
+3. Reference them with `#id`: `<a-entity gltf-model="#my-model"></a-entity>`. Keep only the `<a-assets>` lines you need: a line pointing to a file that doesn't exist makes the scene wait a few seconds.
 
-```html
-<a-entity gltf-model="#my-model" position="0 0.5 0"></a-entity>
-```
+**Adding a 3D model — checklist** (easiest: start from example 04, which already has all of this):
+
+- Inside an image target, add `rotation="90 0 0"` so the model stands up out of the paper (not needed in world examples).
+- Model invisible? It is probably huge or tiny: try `scale="0.01 0.01 0.01"`, then `0.1`, `1`, `10`.
+- Animated model? Copy the `aframe-extras` `<script>` line from the `<head>` of example 04 and add `animation-mixer="clip: *; loop: repeat"` to the entity. Without that script, `animation-mixer` silently does nothing.
+
+**Sound and video:** browsers only allow sound after the user **taps** the page. The camera finding an image is not a tap, so the image-target audio examples (05b, 06) ask for one tap first ("Tap the screen once to enable sound"). Videos without sound (`muted`) can start on their own.
+
+**Three.js colour images:** when you load a colour texture yourself (`TextureLoader`, `CanvasTexture`), add `texture.colorSpace = THREE.SRGBColorSpace;` or it will look washed out. `GLTFLoader` does it for you.
 
 ---
 
 ## Mobile Debugging — How to see errors on your phone
 
-When something goes wrong on your phone (blank screen, content not appearing, errors), you need to see the browser's **console** — the place where error messages appear. On a computer you open it with `F12`, but on a phone it is hidden. Here is how to access it.
+When something goes wrong on the phone (black screen, nothing appears, no sound), the explanation is almost always in the browser **console**. On a computer you open it with `F12`; on a phone it's hidden. Three ways to see it:
 
-### Android + Chrome (USB)
+### 1. eruda — a console directly on the phone (any phone, any browser, no cable) ⭐
 
-This lets you see your phone's Chrome console on your computer screen.
+[eruda](https://github.com/liriliri/eruda) is a small developer-tools panel that appears **on top of the page, on the phone itself**. It is already wired into every example here — you just switch it on:
 
-**On your Android phone:**
+- **For one page:** add `?debug` at the end of the URL
+  `https://<you>.github.io/Aframe_8thwall_binary/image_target_8thFrame/01_primitives.html?debug`
+  This is **not remembered**: open the page again without `?debug` and eruda is gone.
+- **For all examples on this phone:** tick **On-phone console (eruda)** on the landing page. It's remembered on this phone (even after closing the browser) until you untick it — for this web address only: ticking it on your dev-tunnel address doesn't turn it on for your github.io address.
+- **To switch it off:** untick the box on the landing page. While the box is ticked, `?debug=0` at the end of a URL hides eruda on that page only.
 
-1. Open **Settings**
-2. Scroll down to **About phone** and tap it
-3. Find **Build number** and tap it **7 times** in a row. You will see a message saying "You are now a developer!"
-4. Go back to **Settings** > **System** > **Developer options** (this menu appeared after step 3)
-5. Enable **USB debugging**
+A **gear button** appears at the bottom right. Tap it to open the panel (you can drag the button if it hides something). The useful tabs:
 
-**Connect and inspect:**
+| Tab | What it shows | Use it to… |
+|-----|---------------|-----------|
+| **Console** | Errors (red), warnings (yellow), and anything printed with `console.log(...)` | Read error messages; add your own `console.log('found!', detail)` in the code to follow what happens. There's also a command line at the bottom to type JavaScript, e.g. `XR8` or `document.querySelector('a-scene')` |
+| **Network** | Files loaded by JavaScript (3D models, fonts, splats) with their status | Spot files in red / status **404** = wrong path or wrong upper/lower case. Images, videos, scripts and the image target are **not** listed here: for those, look in **Console** for a red `Could not load …` line |
+| **Elements** | The live HTML | Check that an element exists and its attributes (e.g. `position`, `visible`) |
+| **Resources** | localStorage, cookies… | Rarely needed here |
+| **Info** | Browser, screen size, URL | Tell which browser/version a student is using |
 
-1. Plug your phone into your computer with a USB cable
-2. On your phone, a popup will ask "Allow USB debugging?" — tap **Allow**
-3. On your computer, open Chrome and type this in the address bar: `chrome://inspect/#devices`
-4. Wait a few seconds. Your phone will appear in the list, along with all open Chrome tabs
-5. Find the tab with your AR page and click **inspect**
-6. A full DevTools window opens — you can see the Console (error messages), Network (loaded files), Elements (HTML), and more
+Common errors and what they mean:
 
-### iOS + Safari (USB + Mac)
+| You see in the console | Meaning / fix |
+|------------------------|---------------|
+| `NotAllowedError: Permission denied` (camera) | Camera access was refused. Browser site settings → Camera → Allow, then reload |
+| Nothing about the camera at all, page stuck | Probably not HTTPS. Check the URL starts with `https://` |
+| `Could not load …` in Console, `404` in Network, or `fetch for "…" responded with 404` | A file path is wrong — check spelling and **upper/lower case** |
+| `NotSupportedError: … no supported sources` | Usually a wrong path to a sound or video file (`new Audio('…')`, `<video src>`) |
+| `NotAllowedError: play() failed because the user didn't interact` | Sound blocked until the first tap (see "Sound and video" above) |
+| `Failed to load module script … MIME type of "text/plain"` | The local server sends `.js` with the wrong type — use Live Server instead of `python -m http.server` on Windows |
+| `… has been blocked by CORS policy` | A file is loaded from another website that doesn't allow it. Put the file in `assets/` instead |
+| `No valid session manager to handle this session` | World tracking opened on a computer: use a phone |
 
-This requires a Mac. It lets you see your iPhone's Safari console on your Mac screen.
+> To add eruda to a page of your own in this project, put `<script src="../eruda-debug.js"></script>` as the **first** script in `<head>`, exactly like the examples do (so it catches errors from the scripts after it). The path is relative to your page: `../` means "one folder up". If your page sits at the project root, next to `index.html`, use `eruda-debug.js` without the `../`. Or, the bare minimum, before `</body>`:
+> ```html
+> <script src="https://cdn.jsdelivr.net/npm/eruda@3/eruda.min.js"></script>
+> <script>eruda.init();</script>
+> ```
+> With the bare version eruda is always visible — remove it before sharing your project.
 
-**On your iPhone:**
+### 2. Android + Chrome, with a USB cable
 
-1. Open **Settings**
-2. Scroll down and tap **Safari**
-3. Scroll down and tap **Advanced**
-4. Enable **Web Inspector**
+Shows the phone's full Chrome DevTools on your computer.
 
-**On your Mac:**
+**On the phone:** Settings → **About phone** → tap **Build number** 7 times ("You are now a developer!") → back to Settings → **System** → **Developer options** → enable **USB debugging**. (Menu names vary a little between brands.)
 
-1. Open **Safari**
-2. In the menu bar, click **Safari > Settings** (or **Preferences**)
-3. Go to the **Advanced** tab
-4. Check **Show Develop menu in menu bar**
+**Then:**
 
-**Connect and inspect:**
+1. Plug the phone into the computer, tap **Allow** on the "Allow USB debugging?" popup
+2. In Chrome on the computer go to `chrome://inspect/#devices`
+3. Your phone and its open tabs appear; click **inspect** under your AR page
+4. You get the full DevTools: Console, Network, Elements… and a live mirror of the phone screen
 
-1. Plug your iPhone into your Mac with a USB cable (Lightning or USB-C)
-2. On your iPhone, if prompted, tap **Trust** this computer
-3. On your Mac, in Safari's menu bar, click **Develop**
-4. You will see your iPhone's name in the dropdown
-5. Hover over it to see all open Safari tabs
-6. Click on the page you want to inspect
-7. A Web Inspector window opens with full console, network, and element inspection
+### 3. iPhone + Safari, with a cable and a Mac
 
+**On the iPhone:** Settings → **Apps** → **Safari** → **Advanced** → enable **Web Inspector** (on older iOS: Settings → Safari → Advanced).
 
+**On the Mac:** Safari → **Settings** → **Advanced** → tick **Show features for web developers** (older macOS: "Show Develop menu in menu bar").
 
-### Any phone, any browser, no cable (eruda)
+**Then:** plug in the iPhone (tap **Trust** if asked), in Safari on the Mac open the **Develop** menu → your iPhone → your page. A Web Inspector window opens with Console, Network, Elements.
 
-If you don't have a USB cable, don't have a Mac (for iOS), or need to debug a browser that doesn't support remote inspection, you can inject a **floating console directly into the page**.
-
-**eruda** is a small JavaScript library that adds a developer tools panel on top of your page, right on your phone screen.
-
-Add these two lines **just before the closing `</body>` tag** in any example file:
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init()</script>
-```
-
-For example, in `01_primitives.html`, it would look like:
-
-```html
-    </xrextras-named-image-target>
-
-  </a-scene>
-
-  <!-- Add these two lines for on-device debugging -->
-  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-  <script>eruda.init()</script>
-</body>
-</html>
-```
-
-When you reload the page on your phone, a small **gear icon** will appear in the bottom-right corner. Tap it to open a console panel where you can see errors, network requests, and more — all directly on your phone screen.
-
-> **Remember to remove these two lines before publishing your final version** — you don't want your users to see the debug panel.
+No Mac? Use eruda (method 1).
 
 ---
 
@@ -625,53 +562,59 @@ When you reload the page on your phone, a small **gear icon** will appear in the
 ```
 Aframe_8thwall_binary/
 │
-├── index.html                 The landing page — a gallery with links to all 9 examples
-├── README.md                  This documentation
+├── index.html                  Landing page: links to all examples + eruda switch
+├── eruda-debug.js              On-phone console: ?debug (one page) or landing-page box (all pages)
+├── README.md                   This documentation
 │
-├── examples/                  A-Frame examples (8frame 1.3.0 + Three.js r137)
-│   ├── 01_primitives.html         Basic 3D shapes with animations
-│   ├── 02_text_msdf.html          Text with custom fonts
-│   ├── 03_images.html             Flat images displayed in AR
-│   ├── 04_3d_models.html          3D model files with animation
-│   ├── 05_video_chroma.html       Video with green screen removal
-│   ├── 06_audio.html              Sound triggered by image detection
-│   ├── 07_p5js.html               p5.js generative graphics as AR texture
-│   ├── 08_gaussian_splat.html     Photorealistic 3D scan rendering
-│   └── 09_multi_targets.html      Multiple images tracked at once
+├── image_target_8thFrame/      Image targets — A-Frame (8frame 1.3.0)
+│   ├── 01_primitives.html … 09_multi_targets.html
+│   └── 05_b_video_chroma.html  Video chromakey + audio
 │
-├── examples_threejs/          Raw Three.js examples (r178 + XR8 pipeline hooks)
-│   ├── lib/
-│   │   └── xr8-three-bootstrap.js Shared XR8 + Three.js setup module
-│   ├── 01–09_*.html               Same examples, no A-Frame dependency
-│   └── 08_gaussian_splat.html     Spark.js works natively with r178
+├── image_target_Threejs/       Image targets — raw Three.js r178
+│   ├── lib/xr8-three-bootstrap.js        Shared XR8 + Three.js setup, image target callbacks
+│   └── 01_primitives.html … 09_multi_targets.html
 │
-├── engine/                    The AR engine (do not modify these files)
-│   ├── xr.js                     Main engine file
-│   ├── xr-slam.js                SLAM (camera tracking) module
-│   ├── xr-face.js                Face detection module (not used in these examples)
-│   ├── LICENSE                    Niantic Spatial license terms
-│   └── resources/                Machine learning models and worker scripts
+├── world_8thFrame/             World effects — A-Frame
+│   ├── lib/tap-to-place.js               tap-to-place / tap-to-cycle components
+│   └── 01_primitives.html … 09_multi_targets.html
 │
-├── assets/                    All media files (images, models, audio, video)
-│   ├── Target_*.jpg               Image targets — print these for AR detection
-│   ├── *.glb                      3D model files
-│   ├── *.mp3, *.wav               Audio files
-│   ├── mask_*.mp4                 Chromakey video files
-│   ├── export1.png                Sample image
-│   └── splat_30000.sog            Gaussian splat 3D scan data
+├── world_Threejs/              World effects — raw Three.js r178
+│   ├── lib/xr8-three-world-bootstrap.js  Shared XR8 + Three.js setup, tap-to-place
+│   └── 01_primitives.html … 09_multi_targets.html
 │
-├── agents/                    Notes and plans (for reference only)
-│   ├── plan.md                    Implementation plan
-│   └── research.md                Technical research on A-Frame + 8th Wall
+├── engine/                     8th Wall XR Engine (do not modify — see License)
+│   ├── xr.js, xr-slam.js, xr-face.js
+│   ├── resources/              Models and workers used by the engine
+│   └── LICENSE
 │
-└── .idx/
-    └── dev.nix                Configuration for Firebase Studio environment
+├── assets/                     Media files
+│   ├── Targets/                Image targets — print these
+│   ├── *.glb, *.mp3, *.mp4, *.png, *.sog, *.splat
+│
+├── agents/                     Original planning/research notes (historical, partly outdated)
+└── .idx/dev.nix                Firebase Studio configuration
 ```
+
+### How the raw Three.js versions work
+
+The engine (XR8) draws the camera image on `<canvas id="xr-canvas">`. The bootstrap module creates a **second, transparent canvas on top** for Three.js, and registers a *camera pipeline module* that, every frame, copies the phone's position and the camera's lens parameters from XR8 into the Three.js camera, and reports image targets through `onImageFound` / `onImageUpdated` / `onImageLost` (or taps through `onTapPlace` for world effects; there, the bootstrap also moves the sun, the light that casts shadows, to the tapped spot so the placed content keeps its shadows). If the engine can't start, the bootstrap shows the error on screen.
+
+---
+
+## Known limitations
+
+- **Gaussian splat in A-Frame (`image_target_8thFrame/08`, `world_8thFrame/08`)**: Spark.js needs Three.js r178+, but 8frame bundles r137. These two examples use `@zappar/three-gaussian-splat` instead, with an import-map shim and a `Worker` patch. It works, but only with the `.splat` format (48 MB here — slow on mobile data). Prefer the Three.js versions (Spark.js, 5 MB `.sog`).
+- **World tracking needs a phone or tablet.** On a computer the A-Frame world examples show a QR code to open them on a phone, and the Three.js ones show "World tracking needs a phone or tablet".
+- **A-Frame examples on a computer** show XRExtras' "open this on your phone" screen; the `image_target_Threejs/` examples run with a laptop webcam.
+- **Libraries come from CDNs** (8th Wall CDN, jsDelivr, esm.sh, raw.githubusercontent.com for the MSDF fonts). Without internet, the examples don't load.
 
 ---
 
 ## License and Credits
 
-- **XR Engine**: The files in `engine/` are provided under the [Niantic Spatial XR Engine License](engine/LICENSE). Free for non-commercial XR experimentation. Cannot be modified or resold. See the license file for full terms.
-- **Audio**: Bass loop sample by josefpres on [Freesound.org](https://freesound.org/) (CC0 — free to use).
-- **A-Frame / 8frame**: MIT License (open source, free to use and modify).
+- **8th Wall XR Engine** (`engine/`): created by **Niantic Spatial, Inc.**, licensed under the [Niantic Spatial XR Engine License](engine/LICENSE). You may use and redistribute it **unmodified**, in your own applications; you may not modify, reverse-engineer or resell it, nor use it in a product sold for a fee whose value comes mainly from the engine (section 1.2). Any material using it must credit Niantic Spatial as the creator, include a copyright notice (`© Niantic Spatial, Inc.`), and refer to the license and its disclaimer of warranties (section 1.3) — the landing page footer does this; keep a similar notice if you publish your own project. The engine is provided "as is", without warranty. Read the license file for the exact terms.
+- **A-Frame / 8frame**, **Three.js**, **eruda**: MIT License. **p5.js**: LGPL-2.1.
+- **Spark.js**: MIT License. **troika-three-text**: MIT License.
+- **aframe-extras** (the `animation-mixer` in the A-Frame `04_3d_models` examples) and **@zappar/three-gaussian-splat** (the A-Frame `08_gaussian_splat` examples): MIT License.
+- **Audio**: bass loop by josefpres on [Freesound.org](https://freesound.org/) (CC0).
+- **MSDF fonts**: [etiennepinchon/aframe-fonts](https://github.com/etiennepinchon/aframe-fonts) (fonts under their own open licenses).

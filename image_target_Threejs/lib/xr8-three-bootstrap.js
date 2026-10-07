@@ -1,12 +1,27 @@
 /**
- * xr8-three-bootstrap.js
+ * xr8-three-bootstrap.js: the shared plumbing behind every image-target Three.js example.
+ * You normally DON'T need to edit this file. Copy an example HTML file and change that instead.
+ * Plain-words explanation: README > "How the raw Three.js versions work".
  *
- * Shared bootstrap for raw Three.js r178 + XR8 image tracking.
+ * How it works:
+ *   - The 8th Wall engine (XR8) draws the camera video on <canvas id="xr-canvas">.
+ *   - This file adds a second, transparent canvas on top, where Three.js draws your 3D.
+ *   - Every frame, XR8 tells us where the phone is ("pose" = position + rotation) and how
+ *     its camera lens sees ("intrinsics"). We copy both into the Three.js camera so your 3D
+ *     lines up with the video. A "pipeline module" is just an object of functions
+ *     (onStart, onUpdate, onRender...) that XR8 calls at those moments.
  *
- * Architecture:
- *   - XR8 renders camera feed on the original <canvas>
- *   - Three.js renders 3D on a separate transparent canvas on top
- *   - XR8 pipeline provides camera pose + image-target data each frame
+ * Usage (see any example HTML file):
+ *   const { scene } = await startXR8({
+ *     canvas,                        // the <canvas id="xr-canvas"> element
+ *     imageTargets: [...],           // the printed images to look for (README > Changing the image target)
+ *     onImageFound(detail) {},       // image first seen. detail = { name, position, rotation, scale }
+ *     onImageUpdated(detail) {},     // image still seen (every frame): move your content to it
+ *     onImageLost(detail) {},        // image gone. detail.name says which one
+ *     onRenderLoop(state, delta) {}, // every frame: animate here. delta = seconds since last frame
+ *   });
+ *   scene.add(myGroup);
+ *   // startXR8 also returns camera, renderer, clock and sun (the shadow light) if you need them.
  */
 
 import * as THREE from 'three';
@@ -47,6 +62,48 @@ function removeLoadingOverlay() {
   if (el) el.remove();
 }
 
+/**
+ * Show a readable error on screen (on a phone you can't see the console).
+ * A-Frame examples get this from xrextras-runtime-error; raw Three.js has to do it itself.
+ */
+function showErrorOverlay(title, detail) {
+  removeLoadingOverlay();
+  if (document.getElementById('xr8-error')) return;
+  const box = document.createElement('div');
+  box.id = 'xr8-error';
+  box.style.cssText =
+    'position:fixed; inset:0; z-index:9999; background:#000; color:#fff; padding:24px;' +
+    'display:flex; flex-direction:column; justify-content:center; gap:12px;' +
+    'font-family:-apple-system, BlinkMacSystemFont, sans-serif; text-align:center;';
+  const h = document.createElement('div');
+  h.style.cssText = 'font-size:20px; font-weight:600;';
+  h.textContent = title;
+  const p = document.createElement('div');
+  p.style.cssText = 'font-size:14px; opacity:0.75; word-break:break-word;';
+  p.textContent = detail;
+  const hint = document.createElement('div');
+  hint.style.cssText = 'font-size:13px; opacity:0.5;';
+  hint.textContent = 'Tip: add ?debug to the URL to open an on-phone console.';
+  box.append(h, p, hint);
+  document.body.appendChild(box);
+}
+
+// If an example fails BEFORE it calls startXR8() (for example a wrong file
+// name in loader.loadAsync('../assets/my-model.glb')), the page would stay
+// blank. Show the problem on screen instead.
+let arStarted = false; // set by startXR8(): from then on XR8 reports its own errors
+function showEarlyError(reason) {
+  if (arStarted) return;
+  let msg = 'Unknown error';
+  if (reason && reason.message) msg = reason.message;
+  else if (reason && reason.target && reason.target.src) msg = 'Could not load ' + reason.target.src; // a missing image
+  else if (reason) msg = String(reason);
+  showErrorOverlay('The example could not start',
+    msg + ' (check the file names and paths in this example: upper/lower case matters)');
+}
+window.addEventListener('error', (e) => showEarlyError(e.error || e.message));
+window.addEventListener('unhandledrejection', (e) => showEarlyError(e.reason));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -59,33 +116,6 @@ export function applyTargetPose(obj, detail) {
   obj.position.set(position.x, position.y, position.z);
   obj.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
   obj.scale.set(scale, scale, scale);
-}
-
-/**
- * Create a shadow-casting directional light meant to be added to a target group.
- * Because it lives inside the group, it transforms with the image target automatically.
- */
-export function createShadowLight(opts = {}) {
-  const {
-    color = 0xfff5e0,
-    intensity = 1.0,
-    position = [2, 4, 2],
-    mapSize = 1024,
-    frustum = 10,
-    bias = -0.002,
-  } = opts;
-  const light = new THREE.DirectionalLight(color, intensity);
-  light.position.set(...position);
-  light.castShadow = true;
-  light.shadow.mapSize.set(mapSize, mapSize);
-  light.shadow.camera.near = 0.01;
-  light.shadow.camera.far = 50;
-  light.shadow.camera.left = -frustum;
-  light.shadow.camera.right = frustum;
-  light.shadow.camera.top = frustum;
-  light.shadow.camera.bottom = -frustum;
-  light.shadow.bias = bias;
-  return light;
 }
 
 // ---------------------------------------------------------------------------
@@ -103,6 +133,7 @@ export async function startXR8(config) {
     onRenderLoop,
   } = config;
 
+  arStarted = true; // errors are now handled by onException / onCameraStatusChange below
   createLoadingOverlay();
 
   const state = {
@@ -138,6 +169,8 @@ export async function startXR8(config) {
         antialias: true,
       });
       state.renderer.setClearColor(0x000000, 0);
+      // Resolution of the 3D layer. 1 = fast but slightly blurry on sharp phone screens.
+      // For crisper 3D and text, change the 1 to 2 (uses more battery and can be slower).
       state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1));
       state.renderer.setSize(window.innerWidth, window.innerHeight, false);
 
@@ -246,9 +279,18 @@ export async function startXR8(config) {
       state.renderer.render(state.scene, state.camera);
     },
 
+    onCameraStatusChange: ({ status }) => {
+      if (status === 'failed') {
+        showErrorOverlay(
+          'Camera unavailable',
+          'Allow camera access and make sure the page is served over HTTPS.'
+        );
+      }
+    },
+
     onException: (error) => {
-      removeLoadingOverlay();
       console.error('[XR8] Exception:', error);
+      showErrorOverlay('Something went wrong', String(error && error.message || error));
     },
   };
 
@@ -274,8 +316,8 @@ export async function startXR8(config) {
       {
         event: 'reality.imagelost',
         process: ({ detail }) => {
-          if (detail) {
-            activeTargets.delete(detail.name);
+          // The per-frame check in onUpdate may already have reported this loss
+          if (detail && activeTargets.delete(detail.name)) {
             if (onImageLost) onImageLost(detail);
           }
         },
@@ -305,7 +347,9 @@ export async function startXR8(config) {
   canvas.width = Math.round(window.innerWidth * dpr);
   canvas.height = Math.round(window.innerHeight * dpr);
 
-  XR8.run({ canvas });
+  // ANY: image targets also work with a laptop webcam (handy for testing).
+  // With the default (mobile only) XR8 silently refuses to start on a desktop.
+  XR8.run({ canvas, allowedDevices: XR8.XrConfig.device().ANY });
 
   return state;
 }

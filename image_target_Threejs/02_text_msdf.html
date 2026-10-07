@@ -2,13 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>02 — Text & MSDF Fonts (Three.js)</title>
+  <title>02 — Text &amp; Fonts · Image target · Three.js</title>
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; }
     canvas { display: block; position: fixed; top: 0; left: 0; width: 100% !important; height: 100% !important; }
   </style>
 
+  <!-- Import map: tells the browser where to download the libraries that the
+       code below loads with  import ... from 'three'.  Change a version number
+       here (e.g. three@0.178.0) and every import uses it. -->
   <script type="importmap">
   { "imports": {
       "three": "https://esm.sh/three@0.178.0",
@@ -68,6 +73,7 @@
           new THREE.TextureLoader().load(pngUrl, resolve, undefined, reject);
         })
       ]);
+      // No colorSpace here on purpose: this PNG is not a picture, it stores distances to letter edges.
       texture.minFilter = THREE.LinearFilter;
       texture.magFilter = THREE.LinearFilter;
       texture.generateMipmaps = false;
@@ -75,14 +81,22 @@
     }
 
     /**
-     * Create a Three.js mesh that renders MSDF text.
+     * Create a mesh that shows MSDF text. You don't need to understand this
+     * function or the shader code above: just call it (see "Scene setup" below)
+     * and change the text and options.
+     * (MSDF = a font stored as a PNG image of all its letters plus a .json file
+     *  saying where each letter is; it stays sharp at any distance.)
      *
-     * @param {string} text   — the string to render
-     * @param {object} font   — parsed BMFont JSON
-     * @param {THREE.Texture} texture — the MSDF atlas
-     * @param {object} opts   — { color, width, align }
-     *   width:  text block width in world units (controls apparent size, like A-Frame)
-     *   align:  'left' | 'center' | 'right'
+     * @param {string} text   - ONE line of text ('\n' is not a line break).
+     *                          These fonts only contain basic English characters:
+     *                          accents (é, è, à, ç...) show up as a blank gap.
+     * @param {object} font   - parsed font JSON (from loadMsdfFont)
+     * @param {THREE.Texture} texture - the font PNG (from loadMsdfFont)
+     * @param {object} opts   - { color, width, align }
+     *   width: the whole line is stretched to exactly this width (in 3D units),
+     *          so a longer text gets smaller letters. (Not like A-Frame, where
+     *          width sets the letter size.)
+     *   align: 'left' | 'center' | 'right'
      */
     function createMsdfText(text, font, texture, opts = {}) {
       const color = new THREE.Color(opts.color || '#ffffff');
@@ -143,7 +157,9 @@
       if (align === 'center') offsetX = -textWidthPx / 2;
       else if (align === 'right') offsetX = -textWidthPx;
 
-      // Center vertically around baseline
+      // Move the text down by half a line. This does NOT centre it: the tops of the
+      // letters end up roughly at the y you give in t.position.set(...), and the
+      // text hangs below that point.
       const offsetY = -lineHeight / 2;
 
       // Apply offsets + scale to positions
@@ -179,8 +195,9 @@
     // Scene setup
     // =========================================================================
 
+    // Hidden until the camera finds the image (onImageFound shows it)
     const group = new THREE.Group();
-    group.position.set(0, -9999, 0);
+    group.visible = false;
 
     // Same MSDF font URLs as the A-Frame example
     const FONT_BASE = 'https://raw.githubusercontent.com/etiennepinchon/aframe-fonts/master/fonts';
@@ -195,17 +212,20 @@
       loadMsdfFont(crimsonUrl),
     ]);
 
-    // 1. Default A-Frame text (Roboto SDF) — approximate with canvas text
+    // 1. Plain canvas text, for comparison (stands in for A-Frame's default text in the A-Frame version).
+    //    Text is drawn on a 2D canvas and used as an image: easy (any system font) but blurry up close.
+    //    Compare it with the sharp MSDF lines below.
     {
       const canvas = document.createElement('canvas');
       canvas.width = 512; canvas.height = 64;
       const ctx = canvas.getContext('2d');
-      ctx.font = 'bold 40px Roboto, Arial, sans-serif';
+      ctx.font = 'bold 40px Arial, sans-serif';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('Default Roboto (SDF)', 256, 32);
+      ctx.fillText('Canvas text (blurry up close)', 256, 32);
       const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace; // keeps the colour you chose (see README)
       const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide });
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.4), mat);
       mesh.position.set(0, 2.0, 0);
@@ -271,12 +291,13 @@
       }],
       onImageFound: (detail) => {
         applyTargetPose(group, detail);
+        group.visible = true;
       },
       onImageUpdated: (detail) => {
         applyTargetPose(group, detail);
       },
       onImageLost: () => {
-        group.position.set(0, -9999, 0);
+        group.visible = false;
       }
     });
 

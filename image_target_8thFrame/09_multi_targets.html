@@ -2,7 +2,9 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>09 — Multi Image Targets</title>
+  <!-- On-phone console: add ?debug to the URL (see README > Mobile Debugging) -->
+  <script src="../eruda-debug.js"></script>
+  <title>09 — Multi Targets · Image target · A-Frame</title>
 
   <!-- AR Libraries -->
   <script src="https://cdn.8thwall.com/web/aframe/8frame-1.3.0.min.js"></script>
@@ -79,8 +81,8 @@
             "imagePath": "../assets/Targets/Target_wall_large.jpg",
             "properties": {
               "left": 0, "top": 0,
-              "width": 986, "height": 563,
-              "originalWidth": 986, "originalHeight": 563,
+              "width": 986, "height": 564,
+              "originalWidth": 986, "originalHeight": 564,
               "isRotated": false
             }
           },
@@ -90,13 +92,11 @@
             "imagePath": "../assets/Targets/Target_wall_detail.jpg",
             "properties": {
               "left": 0, "top": 0,
-              "width": 524, "height": 762,
-              "originalWidth": 524, "originalHeight": 762,
+              "width": 524, "height": 772,
+              "originalWidth": 524, "originalHeight": 772,
               "isRotated": false
             }
-          },
-
-
+          }
         ]
       });
     };
@@ -109,73 +109,71 @@
     xrextras-almost-there
     xrextras-loading
     xrextras-runtime-error
+    vr-mode-ui="enabled: false"
     xrweb="disableWorldTracking: true">
 
     <a-camera position="0 4 10"></a-camera>
 
-    <!-- TARGET A — each target gets its own <xrextras-named-image-target>
-         with a name matching the imageTargetData entry -->
+    <!-- One <xrextras-named-image-target> per image. Its "name" must match
+         a "name" in imageTargetData above. -->
+
+    <!-- Shapes use z > 0 so they float in front of each image (Z points out of the image, like in 01). -->
+
+    <!-- TARGET A -->
     <xrextras-named-image-target name="poster-a">
-      <a-box color="#FF0055" position="0 0.5 0"
+      <a-box color="#FF0055" position="0 0.5 0.4" scale="0.5 0.5 0.5"
              animation="property: rotation; to: 0 360 0; loop: true; dur: 4000; easing: linear">
       </a-box>
       <a-text value="Target A" color="red" align="center"
               position="0 0 0" width="3"></a-text>
     </xrextras-named-image-target>
 
-    <!-- TARGET B — different AR content for the second image
-         Replace ../assets/target-b.jpg with your own second image target -->
+    <!-- TARGET B -->
     <xrextras-named-image-target name="poster-b">
-      <a-sphere color="#00AAFF" position="0 0.5 0" radius="0.4"
-                animation="property: position; from: 0 0.5 0; to: 0 1.0 0;
+      <a-sphere color="#00AAFF" position="0 0.5 0.4" radius="0.4"
+                animation="property: position; from: 0 0.5 0.4; to: 0 0.5 0.9;
                            loop: true; dur: 1500; dir: alternate; easing: easeInOutQuad">
       </a-sphere>
       <a-text value="Target B" color="red" align="center"
               position="0 0 0" width="3"></a-text>
     </xrextras-named-image-target>
 
-    <!-- TARGET C — different AR content for the second image
-    Replace ../assets/target-b.jpg with your own second image target -->
+    <!-- TARGET C -->
     <xrextras-named-image-target name="poster-c">
-      <a-sphere color="#FFAAFF" position="0 0.5 0" radius="0.4"
-                animation="property: position; from: 0 0.5 0; to: 0 1.0 0;
-                               loop: true; dur: 1500; dir: alternate; easing: easeInOutQuad">
+      <a-sphere color="#FFAAFF" position="0 0.5 0.4" radius="0.4"
+                animation="property: position; from: 0 0.5 0.4; to: 0 0.5 0.9;
+                           loop: true; dur: 1500; dir: alternate; easing: easeInOutQuad">
       </a-sphere>
       <a-text value="Target C" color="red" align="center"
-                  position="0 0 0" width="3"></a-text>
-      </xrextras-named-image-target>
+              position="0 0 0" width="3"></a-text>
+    </xrextras-named-image-target>
 
-    <!-- TARGET D — different AR content for the second image
-    Replace ../assets/target-b.jpg with your own second image target -->
+    <!-- TARGET D -->
     <xrextras-named-image-target name="poster-d">
-      <a-sphere color="#FF00AA" position="0 0.5 0" radius="0.4"
-                animation="property: position; from: 0 0.5 0; to: 0 1.0 0;
-                               loop: true; dur: 1500; dir: alternate; easing: easeInOutQuad">
+      <a-sphere color="#FF00AA" position="0 0.5 0.4" radius="0.4"
+                animation="property: position; from: 0 0.5 0.4; to: 0 0.5 0.9;
+                           loop: true; dur: 1500; dir: alternate; easing: easeInOutQuad">
       </a-sphere>
       <a-text value="Target D" color="red" align="center"
-                  position="0 0 0" width="3"></a-text>
-      </xrextras-named-image-target>
+              position="0 0 0" width="3"></a-text>
+    </xrextras-named-image-target>
 
-          <!-- TARGET E — different AR content for the second image
-    Replace ../assets/target-b.jpg with your own second image target -->
+    <!-- TARGETS E, F, G — text only -->
     <xrextras-named-image-target name="poster-e">
       <a-text value="Wall Close" color="red" align="center"
-                  position="0 0 0" width="3"></a-text>
-      </xrextras-named-image-target>
+              position="0 0 0" width="3"></a-text>
+    </xrextras-named-image-target>
 
-              <!-- TARGET F — different AR content for the second image
-    Replace ../assets/target-b.jpg with your own second image target -->
     <xrextras-named-image-target name="poster-f">
       <a-text value="Wall Large" color="red" align="center"
-                  position="0 0 0" width="3"></a-text>
-      </xrextras-named-image-target>
+              position="0 0 0" width="3"></a-text>
+    </xrextras-named-image-target>
 
-              <!-- TARGET G — different AR content for the second image
-    Replace ../assets/target-b.jpg with your own second image target -->
     <xrextras-named-image-target name="poster-g">
       <a-text value="Wall Detail" color="red" align="center"
-                  position="0 0 0" width="3"></a-text>
-      </xrextras-named-image-target>
+              position="0 0 0" width="3"></a-text>
+    </xrextras-named-image-target>
+
   </a-scene>
 </body>
 </html>
